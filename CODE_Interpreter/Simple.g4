@@ -15,9 +15,10 @@ assignList: VARIABLENAME ('=' VARIABLENAME)*;
 
 functionCall: FUNCTIONNAME ': ' (value (',' value)*)?;
 
+declaratorlist: declarator | declarator ',' declaratorlist;
+
 declarator: VARIABLENAME | VARIABLENAME '=' value;
 
-declaratorlist: declarator | declarator ',' declaratorlist;
 
 constant: INTEGERVAL | FLOATVAL | CHARVAL | BOOLVAL | STRINGVAL;  
  
@@ -31,6 +32,7 @@ value:
 	| value addMinOp value         #additiveExpression
 	| value concOp value           #concatenateExpression
 	| NEWLINEOP                    #newlineopExpression
+	| declarator                   #choyens
     ; 
    
 mulDivOp: '*' | '/' | '%'; // Multiplication Division Modulo

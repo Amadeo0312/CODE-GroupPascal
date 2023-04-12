@@ -8,6 +8,7 @@ public class Visitor : SimpleBaseVisitor<object?>
     public Dictionary<string, object?> FloatVar { get; } = new();
     public Dictionary<string, object?> BoolVar { get; } = new();
     
+    
     public Visitor()
     {
         Functions["DISPLAY"] = new Func<object?[], object?>(Display);
@@ -17,6 +18,10 @@ public class Visitor : SimpleBaseVisitor<object?>
     {
         foreach (var arg in args)
         {
+            if (arg == null)
+            {
+                Console.Error.WriteLine("Error: incompatible type null.");
+            }
             Console.WriteLine(arg);
         }
 
@@ -29,13 +34,13 @@ public class Visitor : SimpleBaseVisitor<object?>
         switch (varDatatype)
         {
             case "CHAR":
-                CharVar[varName] = ' ';
+                CharVar[varName] = null;
                 break;
             case "INT":
-                IntVar[varName] = 0;
+                IntVar[varName] = null;
                 break;
             case "FLOAT":
-                FloatVar[varName] = 0.0;
+                FloatVar[varName] = null;
                 break;
             case "BOOL":
                 BoolVar[varName] = null;
@@ -115,7 +120,16 @@ public class Visitor : SimpleBaseVisitor<object?>
                 }
                 else
                 {
-                    throw new Exception($"Invalid assignment for variable {varName}: expected to be CHAR");
+                    if (value == null)
+                    {
+                        Console.Error.WriteLine("Error: The " + s + " is not initialized");
+
+                    }
+                    else
+                    {
+                        throw new Exception($"Invalid assignment for variable {varName}: expected to be CHAR");
+                    }
+                    
                 }
             }
             else if (IntVar.ContainsKey(s))
@@ -125,8 +139,15 @@ public class Visitor : SimpleBaseVisitor<object?>
                     IntVar[s] = value;
                 }
                 else
-                {
-                    throw new Exception($"Invalid assignment for variable {varName} : expected to be INT");
+                {if (value == null)
+                    {
+                        Console.Error.WriteLine("Error: The " + s + " is not initialized");
+
+                    }
+                    else
+                    {
+                        throw new Exception($"Invalid assignment for variable {varName} : expected to be INT");
+                    }
                 }
             }
             else if (FloatVar.ContainsKey(s))
@@ -137,7 +158,15 @@ public class Visitor : SimpleBaseVisitor<object?>
                 }
                 else
                 {
-                    throw new Exception($"Invalid assignment for variable {varName}: expected to be FLOAT");
+                    if (value == null)
+                    {
+                        Console.Error.WriteLine("Error: The " + s + " is not initialized");
+
+                    }
+                    else
+                    {
+                        throw new Exception($"Invalid assignment for variable {varName}: expected to be FLOAT");
+                    }
                 }
             }
             else if (BoolVar.ContainsKey(s))
@@ -148,7 +177,15 @@ public class Visitor : SimpleBaseVisitor<object?>
                 }
                 else
                 {
-                    throw new Exception($"Invalid assignment for variable {varName}: expected to be BOOL");
+                    if (value == null)
+                    {
+                        Console.Error.WriteLine("Error: The " + s + " is not initialized");
+
+                    }
+                    else
+                    {
+                        throw new Exception($"Invalid assignment for variable {varName}: expected to be BOOL");
+                    }
                 }
             }
         }
@@ -160,55 +197,51 @@ public class Visitor : SimpleBaseVisitor<object?>
         var varDeclarator = context.declaratorlist().GetText();
         string[] variableList = varDeclarator.Split(',');
         int variableCount = variableList.Length;
-        
-        if (varDeclarator.Contains('='))
-        {
-            string[] lastVariable = variableList[variableCount - 1].Split('=');
-            var varName = lastVariable[0];
-            var value = lastVariable[1];
-            int intValue;
-            float floatValue;
-            bool isNum = int.TryParse(value, out intValue), isFloat = float.TryParse(value, out floatValue);
 
-            if (!isNum || !isFloat)
-                value = value[1..^1];
-            
-            for (int i = 0; i < variableCount; i++)
-            {
-                MultipleDeclaration(varName);
-                if (i == variableCount - 1)
-                {
-                    if (varDatatype == "CHAR" && !isNum)
-                    {
-                        CharVar[varName] = value;
-                    }
-                    else if (varDatatype == "INT" && isNum)
-                    {
-                        IntVar[varName] = intValue;
-                    }
-                    else if (varDatatype == "FLOAT" && isFloat)
-                    {
-                        FloatVar[varName] = floatValue;
-                    }
-                    else if (varDatatype == "BOOL" && (value == "TRUE" || value == "FALSE"))
-                    {
-                        BoolVar[varName] = value;
-                    }
-                    else
-                    {
-                        throw new Exception($"Invalid assignment for variable {varName}: expected to be {varDatatype}");
-                    }
-                    break;
-                }
-                DefaultDeclaration(varDatatype, variableList[i]);
-            }
-        }
-        else
+        foreach (string variable in variableList)
         {
-            for (int i = 0; i < variableCount; i++)
+            if (variable.Contains('='))
             {
-                DefaultDeclaration(varDatatype, variableList[i]);
+                string[] var = variable.Split('=');
+                var varName = var[0];
+                var value = var[var.Length - 1];
+                int intValue;
+                float floatValue;
+                bool isNum = int.TryParse(value, out intValue), isFloat = float.TryParse(value, out floatValue);
+
+                if (!isNum || !isFloat)
+                    value = value[1..^1];
+
+                MultipleDeclaration(varName);
+                if (varDatatype == "CHAR" && !isNum)
+                {
+                    CharVar[varName] = value;
+                }
+                else if (varDatatype == "INT" && isNum)
+                {
+                    IntVar[varName] = intValue;
+                }
+                else if (varDatatype == "FLOAT" && isFloat)
+                {
+                    FloatVar[varName] = floatValue;
+                }
+                else if (varDatatype == "BOOL" && (value == "TRUE" || value == "FALSE"))
+                {
+                    BoolVar[varName] = value;
+                }
+                else
+                {
+                    throw new Exception($"Invalid assignment for variable {varName}: expected to be {varDatatype}");
+                }
+
+                DefaultDeclaration(varDatatype, variable);
             }
+            else
+            {
+                DefaultDeclaration(varDatatype, variable);
+
+            }
+             
         }
 
         return null;
