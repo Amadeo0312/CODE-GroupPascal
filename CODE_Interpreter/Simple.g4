@@ -1,36 +1,23 @@
 grammar Simple;
 
-//Main Code
-program: 'BEGIN CODE' (NEWLINE stmts+ | NEWLINE)* 'END CODE';
-//
+// PARSER RULES
+program: 'BEGIN CODE' NEWLINE statements+ 'END CODE';
 
-// one or more statement (stmt | stmt , stmt)
-stmts: stmt+;
-//
+statements: statement+;
 
-// assign (x = 123), vardec (Int x, y = 123)
-stmt: ( assign | vardec | functionCall) NEWLINE+;
-//
+statement: (vardec | assign | functionCall) NEWLINE;
 
-// assignment ( x = 123 | x = y = 123 )
-assign: VARIABLENAME '=' (value | assign);
-//
+vardec: DATATYPE declaratorlist ;
 
-// Int x | Int x, y;
-vardec: DATATYPE declaratorlist;
-//
+assign: assignList '=' value;
 
-//functionCall: VARIABLENAME ': ' STRINGVAL;
-functionCall: FUNCTIONNAME '(' (value (',' value)*)? ')';
-//
+assignList: VARIABLENAME ('=' VARIABLENAME)*;
 
-// Int x | Int x, y 
-declaratorlist: declarator | declarator ',' declaratorlist;
-//
+functionCall: FUNCTIONNAME ': ' (value (',' value)*)?;
 
-// x | y = 123
 declarator: VARIABLENAME | VARIABLENAME '=' value;
-//
+
+declaratorlist: declarator | declarator ',' declaratorlist;
 
 constant: INTEGERVAL | FLOATVAL | CHARVAL | BOOLVAL | STRINGVAL;  
  
@@ -43,8 +30,9 @@ value:
 	| value mulDivOp value         #multiplicativeExpression
 	| value addMinOp value         #additiveExpression
 	| value concOp value           #concatenateExpression
-	| value assignOp value         #assignExpression
+	| NEWLINEOP                    #newlineopExpression
     ; 
+   
 mulDivOp: '*' | '/' | '%'; // Multiplication Division Modulo
 addMinOp: '+' | '-'; // Addition Subtraction 
 compareOp: '>' | '<' | '>=' | '<=' | '==' | '<>'; 
@@ -52,15 +40,20 @@ logicalOp: 'AND' | 'OR' | 'NOT';
 concOp: '&';
 assignOp: '=';
 
-DATATYPE: 'BOOL' | 'INT' | 'CHAR' | 'FLOAT'; 
+//LEXER RULES
+
+NEWLINEOP: '$';
+DATATYPE: 'BOOL' | 'CHAR' | 'INT' | 'FLOAT';
 BOOLVAL: 'TRUE' | 'FALSE';
-CHARVAL: '\'' [a-zA-Z] '\'';
-INTEGERVAL: ('-')? [1-9]+;
-FLOATVAL: ('-')? [1-9]+ '.' ('-')? [0-9]+;
-STRINGVAL: ('"' ~'"'* '"') | ('\'' ~'\''* '\'');
+CHARVAL: '\'' ([a-zA-Z] | [0-9]) '\'';
+INTEGERVAL: ('-')? [0-9]+;
+FLOATVAL: ('-')? [0-9]+ '.' ('-')? [0-9]+;
+STRINGVAL: ('"' ~'"'* '"')
+	| ('\'' ~'\''* '\'')
+	| ('[' ~']'* ']'+);
 
 WS: [ \t\r]+ -> skip; // Skips whitespaces
 NEWLINE: [\r\n]+;
-FUNCTIONNAME: 'DISPLAY' | 'SCAN';
+FUNCTIONNAME: 'DISPLAY';
 VARIABLENAME: [_a-z][a-zA-Z0-9_]* | [a-z][a-zA-Z0-9_]*;
 COMMENT: '#' ~[\r\n]* -> skip;
