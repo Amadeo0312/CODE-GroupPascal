@@ -64,9 +64,9 @@ public class Visitor : SimpleBaseVisitor<object?>
     {
         var newLine = context.NEWLINE().ToString();
 
-        if (newLine!.Contains(Environment.NewLine))
+        if (!newLine!.Contains(Environment.NewLine))
         {
-            throw new Exception("Invalid Code Format");
+            throw new Exception("Syntax Error: Invalid Code Format");
         }
         
         return base.VisitStatement(context);

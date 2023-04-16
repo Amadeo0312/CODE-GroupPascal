@@ -1,3 +1,8 @@
 BEGIN CODE
-INT a
+
+
+INT x = 5 INT y = 5
+
+
+
 END CODE
