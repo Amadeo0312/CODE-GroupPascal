@@ -9,10 +9,14 @@ var path = Path.Combine(Directory.GetCurrentDirectory(), "../../..");
 Directory.SetCurrentDirectory(Path.GetFullPath(path));
 var fileContent = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Content/Test.ss"));
 
+FileChecker file = new FileChecker();
+file.Checker(fileContent);
+/*
 if (fileContent.Substring(0, 10) != "BEGIN CODE" || fileContent.Substring(fileContent.Length - 8, 8) != "END CODE")
 {
     throw new Exception("No BEGIN CODE or END CODE");
 }
+*/
 
 var inputStream = new AntlrInputStream(fileContent);
 var simpleLexer = new SimpleLexer(inputStream);

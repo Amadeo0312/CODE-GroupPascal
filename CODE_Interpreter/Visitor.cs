@@ -1,4 +1,6 @@
-﻿namespace CODE_Interpreter;
+﻿using System.Runtime.CompilerServices;
+
+namespace CODE_Interpreter;
 
 public class Visitor : SimpleBaseVisitor<object?>
 {   
@@ -141,12 +143,12 @@ public class Visitor : SimpleBaseVisitor<object?>
                 else
                 {if (value == null)
                     {
-                        Console.Error.WriteLine("Error: The " + s + " is not initialized");
+                        Console.Error.WriteLine( s + " is not initialized");
 
                     }
                     else
                     {
-                        throw new Exception($"Invalid assignment for variable {varName} : expected to be INT");
+                        throw new Exception($"Invalid assignment! Expected to be INT");
                     }
                 }
             }
@@ -160,12 +162,12 @@ public class Visitor : SimpleBaseVisitor<object?>
                 {
                     if (value == null)
                     {
-                        Console.Error.WriteLine("Error: The " + s + " is not initialized");
+                        Console.Error.WriteLine( s + " is not initialized");
 
                     }
                     else
                     {
-                        throw new Exception($"Invalid assignment for variable {varName}: expected to be FLOAT");
+                        throw new Exception($"Invalid assignment! Expected to be  FLOAT");
                     }
                 }
             }
@@ -179,12 +181,12 @@ public class Visitor : SimpleBaseVisitor<object?>
                 {
                     if (value == null)
                     {
-                        Console.Error.WriteLine("Error: The " + s + " is not initialized");
+                        Console.Error.WriteLine( s + " is not initialized");
 
                     }
                     else
                     {
-                        throw new Exception($"Invalid assignment for variable {varName}: expected to be BOOL");
+                        throw new Exception($"Invalid assignment! Expected to be  BOOL");
                     }
                 }
             }
@@ -231,7 +233,7 @@ public class Visitor : SimpleBaseVisitor<object?>
                 }
                 else
                 {
-                    throw new Exception($"Invalid assignment for variable {varName}: expected to be {varDatatype}");
+                    throw new Exception($"Invalid assignment! expected to be {varDatatype}");
                 }
 
                 DefaultDeclaration(varDatatype, variable);
@@ -333,7 +335,7 @@ public class Visitor : SimpleBaseVisitor<object?>
 
         throw new Exception($"Invalid concatenation operator: '{op}'");
     }
-    
+
     // public override object? VisitAdditiveExpression(SimpleParser.AdditiveExpressionContext context)
     // {
     //     var left = Visit(context.value(0));

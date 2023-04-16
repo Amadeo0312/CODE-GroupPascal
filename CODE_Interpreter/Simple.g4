@@ -1,7 +1,7 @@
 grammar Simple;
 
 // PARSER RULES
-program: 'BEGIN CODE' NEWLINE statements+ 'END CODE';
+program: (COMMENT | NEWLINE)* BEGIN NEWLINE statements+ END (COMMENT | NEWLINE)*;
 
 statements: statement+;
 
@@ -44,6 +44,8 @@ assignOp: '=';
 
 //LEXER RULES
 
+BEGIN: 'BEGIN CODE';
+END: 'END CODE';
 NEWLINEOP: '$';
 DATATYPE: 'BOOL' | 'CHAR' | 'INT' | 'FLOAT';
 BOOLVAL: 'TRUE' | 'FALSE';
@@ -54,7 +56,7 @@ STRINGVAL: ('"' ~'"'* '"')
 	| ('\'' ~'\''* '\'')
 	| ('[' ~']'* ']'+);
 
-WS: [ \t\r]+ -> skip; // Skips whitespaces
+WS: [\t\r]+ -> skip; // Skips whitespaces
 NEWLINE: [\r\n]+;
 FUNCTIONNAME: 'DISPLAY';
 VARIABLENAME: [_a-z][a-zA-Z0-9_]* | [a-z][a-zA-Z0-9_]*;
