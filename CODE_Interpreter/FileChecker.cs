@@ -10,9 +10,11 @@ public class FileChecker
         bool endExist = false;
         string[] program = content.Split("\n");
 
+        
         foreach (string line in program)
         {
-            if (line.Length <= 0 || line[0].Equals('#'))
+            
+            if (line.Length == 1 || line[0].Equals('#'))
             {
                 continue;
             }

@@ -62,14 +62,14 @@ public class Visitor : SimpleBaseVisitor<object?>
 
     public override object? VisitStatement(SimpleParser.StatementContext context)
     {
-        var newLine = context.NEWLINE().GetText();
+        var newLine = context.NEWLINE().ToString();
 
-        if (newLine != "\r\n")
+        if (newLine!.Contains(Environment.NewLine))
         {
             throw new Exception("Invalid Code Format");
         }
         
-        return base.VisitStatement(context);
+        return null;
     }
 
     public override object? VisitFunctionCall(SimpleParser.FunctionCallContext context)
@@ -110,12 +110,14 @@ public class Visitor : SimpleBaseVisitor<object?>
     {
         var varName = context.assignList().GetText();
         var ass = varName.Split('=');
-        var value = Visit(context.value());
+        
         
         foreach (string s in ass)
         {
+            
             if (CharVar.ContainsKey(s))
             {
+                var value = Visit(context.value());
                 if (value is string | value is char)
                 {
                     CharVar[s] = value;
@@ -136,12 +138,14 @@ public class Visitor : SimpleBaseVisitor<object?>
             }
             else if (IntVar.ContainsKey(s))
             {
+                var value = Visit(context.value());
                 if (value is int)
                 {
                     IntVar[s] = value;
                 }
                 else
-                {if (value == null)
+                {
+                    if (value == null)
                     {
                         Console.Error.WriteLine( s + " is not initialized");
 
@@ -154,6 +158,7 @@ public class Visitor : SimpleBaseVisitor<object?>
             }
             else if (FloatVar.ContainsKey(s))
             {
+                var value = Visit(context.value());
                 if (value is float)
                 {
                     FloatVar[s] = value;
@@ -173,6 +178,7 @@ public class Visitor : SimpleBaseVisitor<object?>
             }
             else if (BoolVar.ContainsKey(s))
             {
+                var value = Visit(context.value());
                 if (value is "TRUE" || value is "FALSE")
                 {
                     BoolVar[s] = value;
@@ -206,6 +212,12 @@ public class Visitor : SimpleBaseVisitor<object?>
             {
                 string[] var = variable.Split('=');
                 var varName = var[0];
+
+                if (char.IsDigit(varName[0]))
+                {
+                    throw new Exception($"Syntax Error: {varName } is invalid variable name.");
+                }
+                
                 var value = var[var.Length - 1];
                 int intValue;
                 float floatValue;
@@ -239,7 +251,11 @@ public class Visitor : SimpleBaseVisitor<object?>
                 DefaultDeclaration(varDatatype, variable);
             }
             else
-            {
+            { 
+                if (char.IsDigit(variable[0]))
+                {
+                    throw new Exception($"Syntax Error: {variable } is invalid variable name.");
+                }
                 DefaultDeclaration(varDatatype, variable);
 
             }
@@ -252,7 +268,7 @@ public class Visitor : SimpleBaseVisitor<object?>
     public override object? VisitVariablenameExpression(SimpleParser.VariablenameExpressionContext context)
     {
         var varName = context.VARIABLENAME().GetText();
-
+        
         if (CharVar.ContainsKey(varName))
         {
             return CharVar[varName];
