@@ -2,6 +2,8 @@ BEGIN CODE
 
 
 
-INT a
+float a = 1.1
+
+
 
 END CODE

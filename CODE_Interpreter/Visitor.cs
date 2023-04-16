@@ -69,7 +69,7 @@ public class Visitor : SimpleBaseVisitor<object?>
             throw new Exception("Invalid Code Format");
         }
         
-        return null;
+        return base.VisitStatement(context);
     }
 
     public override object? VisitFunctionCall(SimpleParser.FunctionCallContext context)
@@ -195,6 +195,10 @@ public class Visitor : SimpleBaseVisitor<object?>
                         throw new Exception($"Invalid assignment! Expected to be  BOOL");
                     }
                 }
+            }
+            else
+            {
+                throw new Exception($"Error: Unknown symbol {s}");
             }
         }
         return null;
