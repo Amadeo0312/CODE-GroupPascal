@@ -5,7 +5,7 @@ program: (COMMENT | NEWLINE)* BEGIN NEWLINE statements+ END (COMMENT | NEWLINE)*
 
 statements: statement+;
 
-statement: (vardec | assign | functionCall) (NEWLINE)*;
+statement: (vardec | assign | functionCall) (NEWLINE)+;
 
 vardec: DATATYPE declaratorlist ;
 

@@ -1,9 +1,3 @@
 BEGIN CODE
-
-
-
-float a = 1.1
-
-
-
+INT a
 END CODE
