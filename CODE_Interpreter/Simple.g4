@@ -56,8 +56,8 @@ STRINGVAL: ('"' ~'"'* '"')
 	| ('\'' ~'\''* '\'')
 	| ('[' ~']'* ']'+);
 
-WS: [\t\r]+ -> skip; // Skips whitespaces
+WS: [ \t\r]+ -> skip; // Skips whitespaces
 NEWLINE: [\r\n]+;
-FUNCTIONNAME: 'DISPLAY';
+FUNCTIONNAME: 'DISPLAY' | 'SCAN';
 VARIABLENAME: [_a-z][a-zA-Z0-9_]* | [a-z][a-zA-Z0-9_]*;
 COMMENT: '#' ~[\r\n]* -> skip;

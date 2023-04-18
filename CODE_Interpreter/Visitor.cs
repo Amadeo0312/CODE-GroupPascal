@@ -13,23 +13,60 @@ public class Visitor : SimpleBaseVisitor<object?>
     
     public Visitor()
     {
-        Functions["DISPLAY"] = new Func<object?[], object?>(Display);
+        Functions["DISPLAY"] = new Func<object?[], object?>(VisitDisplay);
+        Functions["SCAN"] = new Func<object?[], object?>(VisitScan);
     }
-
-    private object? Display(object?[] args)
+    
+    private object? VisitDisplay(object?[] args)
     {
         foreach (var arg in args)
         {
             if (arg == null)
             {
-                Console.Error.WriteLine("Error: incompatible type null.");
+                Console.Error.WriteLine("Error: Incompatible type null.");
             }
             Console.WriteLine(arg);
         }
 
         return null;
     }
-
+    
+    private object? VisitScan(object?[] args)
+    {
+        Console.Write("SCAN: ");
+        var input = Console.ReadLine() ?? throw new InvalidOperationException();
+        var userVariables = input.Split(',');
+        var countVariables = 0;
+        
+        foreach (var arg in args)
+        {
+            if (CharVar.ContainsKey(arg!.ToString()!))
+            {
+                var userInput = Convert.ToChar(userVariables[countVariables]);
+                CharVar[arg.ToString()!] = userInput;
+            }else if (IntVar.ContainsKey(arg!.ToString()!))
+            {
+                var userInput = Convert.ToInt32(userVariables[countVariables]);
+                IntVar[arg.ToString()!] = userInput;
+            }else if (FloatVar.ContainsKey(arg!.ToString()!))
+            {
+                var userInput = float.Parse(userVariables[countVariables]);
+                FloatVar[arg.ToString()!] = userInput;
+            }else if (BoolVar.ContainsKey(arg!.ToString()!))
+            {
+                var userInput = userVariables[countVariables];
+                if(userInput is "\"TRUE\"" or "\"FALSE\"")
+                    BoolVar[arg.ToString()!] = userInput;
+                else
+                    throw new Exception("Error: Expected a boolean value.");
+            }
+            else
+                throw new Exception("Error: Identifier is not declared.");
+            
+            countVariables++;
+        }  
+        return null;
+    }
     public void DefaultDeclaration(string varDatatype, string varName)
     {
         MultipleDeclaration(varName);
