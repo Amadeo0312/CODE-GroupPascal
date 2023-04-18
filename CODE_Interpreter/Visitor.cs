@@ -25,7 +25,7 @@ public class Visitor : SimpleBaseVisitor<object?>
             {
                 Console.Error.WriteLine("Error: Incompatible type null.");
             }
-            Console.WriteLine(arg);
+            Console.Write(arg);
         }
 
         return null;
@@ -309,6 +309,10 @@ public class Visitor : SimpleBaseVisitor<object?>
     public override object? VisitVariablenameExpression(SimpleParser.VariablenameExpressionContext context)
     {
         var varName = context.VARIABLENAME().GetText();
+        if (context.parent.GetChild(0).ToString() == "SCAN")
+        {
+            return varName;
+        }
         
         if (CharVar.ContainsKey(varName))
         {

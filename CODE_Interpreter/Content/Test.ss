@@ -1,5 +1,5 @@
 BEGIN CODE
     INT x, y
-    SCAN: x,y
+    SCAN: x,y $
     DISPLAY: x & y
 END CODE
