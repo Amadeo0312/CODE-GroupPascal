@@ -1,8 +1,5 @@
 BEGIN CODE
-
-
-INT x = 5 INT y = 5
-
-
-
+    INT x, y
+    SCAN: x,y
+    DISPLAY: x & y
 END CODE
