@@ -1,5 +1,6 @@
 BEGIN CODE
-    INT x, y
-    SCAN: x,y $
-    DISPLAY: x & y
+    INT b = 10
+    BOOL a
+    a = 'a' <> 'b'
+    DISPLAY: a
 END CODE
