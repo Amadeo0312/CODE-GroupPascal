@@ -34,6 +34,7 @@ value:
 	| value concOp value           #concatenateExpression
 	| NEWLINEOP                    #newlineopExpression
 	| declarator                   #choyens
+	| '(' value ')'                #parenthesisExpression
     ; 
    
 mulDivOp: '*' | '/' | '%'; // Multiplication Division Modulo
