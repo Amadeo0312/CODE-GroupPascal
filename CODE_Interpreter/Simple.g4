@@ -27,6 +27,7 @@ value:
 	| VARIABLENAME                 #variablenameExpression
 	| functionCall                 #functionCallExpression
 	| value compareOp value        #comparisonExpression
+	| logicalOp value              #logicalExpression
 	| value logicalOp value        #logicalExpression
 	| value mulDivOp value         #multiplicativeExpression
 	| value addMinOp value         #additiveExpression

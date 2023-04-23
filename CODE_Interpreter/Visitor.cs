@@ -10,7 +10,7 @@ public class Visitor : SimpleBaseVisitor<object?>
     public Dictionary<string, object?> FloatVar { get; } = new();
     public Dictionary<string, object?> BoolVar { get; } = new();
     
-    List<string?> _compareOperators = new List<string?> { ">", "<", ">=", "<=", "==", "<>" };
+    List<string?> _compareOperators = new List<string?> { ">", "<", ">=", "<=", "==", "<>", "AND", "OR", "NOT" };
     
     public Visitor()
     {
@@ -299,6 +299,11 @@ public class Visitor : SimpleBaseVisitor<object?>
                             value = VisitComparisonExpression((SimpleParser.ComparisonExpressionContext)declarator)
                                 ?.ToString();
                         }
+                        if (declarator.GetType() == typeof(SimpleParser.LogicalExpressionContext))
+                        {
+                            value = VisitLogicalExpression((SimpleParser.LogicalExpressionContext)declarator)
+                                ?.ToString();
+                        }
                     }
                 }else if (!isNum || !isFloat)
                 {
@@ -517,9 +522,38 @@ public class Visitor : SimpleBaseVisitor<object?>
 
         return null;
     }
-    
-    
-    
+
+    public override object? VisitLogicalExpression(SimpleParser.LogicalExpressionContext context)
+    {
+        var leftVal = Visit(context.value(0))?.ToString();
+        var logOp = context.logicalOp().GetText();
+        string? rightVal = "";
+        if (logOp != "NOT")
+        {
+            try
+            {
+                rightVal = Visit(context.value(1))?.ToString();
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine("System Error: Invalid logical operation statement.");
+                Environment.Exit(1);
+            }
+        }
+
+        switch (logOp)
+        {
+            case "AND":
+                return leftVal == "TRUE" && rightVal == "TRUE" ? "TRUE" : "FALSE";
+            case "OR":
+                return leftVal == "TRUE" || rightVal == "TRUE" ? "TRUE" : "FALSE";
+            case "NOT":
+                return leftVal == "TRUE" ? "FALSE" : "TRUE";
+            default:
+                return base.VisitLogicalExpression(context);
+        }
+    }
+
 
     // public override object? VisitAdditiveExpression(SimpleParser.AdditiveExpressionContext context)
     // {

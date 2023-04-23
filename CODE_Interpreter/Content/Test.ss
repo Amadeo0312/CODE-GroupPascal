@@ -1,6 +1,6 @@
 BEGIN CODE
-    INT b = 10
-    BOOL a
-    a = 'a' <> 'b'
-    DISPLAY: a
+    BOOL a = "TRUE"
+    BOOL b = "TRUE"
+    BOOL c = a AND b
+    DISPLAY: c
 END CODE
