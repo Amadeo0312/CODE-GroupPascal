@@ -66,8 +66,7 @@ public class ArithmeticOperators
             case float leftIsFloat when right is int rightIsInt:
                 return leftIsFloat + rightIsInt;
             default:
-                throw new NotImplementedException(
-                    $"Syntax Error: Cannot perform addition of {left?.GetType()} and {right?.GetType()} values.");
+                throw new NotImplementedException($"Syntax Error: Cannot perform addition of {left?.GetType()} and {right?.GetType()} values.");
         }
     }
     
