@@ -149,11 +149,10 @@ public class Visitor : SimpleBaseVisitor<object?>
     {
         var varName = context.assignList().GetText();
         var ass = varName.Split('=');
-        
         var value = Visit(context.value());
+        
         foreach (var s in ass)
         {
-            
             if (CharVar.ContainsKey(s))
             {
                 if (value is string | value is char)
@@ -171,64 +170,49 @@ public class Visitor : SimpleBaseVisitor<object?>
                     {
                         throw new Exception($"Invalid assignment for variable {varName}: expected to be CHAR");
                     }
-                    
                 }
             }
             else if (IntVar.ContainsKey(s))
             {
-                if (value is int)
+                switch (value)
                 {
-                    IntVar[s] = value;
-                }
-                else
-                {
-                    if (value == null)
-                    {
+                    case int intValue:
+                        IntVar[s] = intValue;
+                        break;
+                    case null:
                         Console.Error.WriteLine( s + " is not initialized");
-
-                    }
-                    else
-                    {
+                        break;
+                    default:
                         throw new Exception($"Invalid assignment! Expected to be INT");
-                    }
                 }
             }
             else if (FloatVar.ContainsKey(s))
             {
-                if (value is float)
+                switch (value)
                 {
-                    FloatVar[s] = value;
-                }
-                else
-                {
-                    if (value == null)
-                    {
+                    case float floatValue:
+                        FloatVar[s] = floatValue;
+                        break;
+                    case null:
                         Console.Error.WriteLine( s + " is not initialized");
-
-                    }
-                    else
-                    {
+                        break;
+                    default:
                         throw new Exception($"Invalid assignment! Expected to be  FLOAT");
-                    }
                 }
             }
             else if (BoolVar.ContainsKey(s))
             {
-                if (value is "TRUE" || value is "FALSE")
+                switch (value)
                 {
-                    BoolVar[s] = value;
-                }
-                else
-                {
-                    if (value == null)
-                    {
+                    case "TRUE":
+                    case "FALSE":
+                        BoolVar[s] = value;
+                        break;
+                    case null:
                         Console.Error.WriteLine( s + " is not initialized");
-
-                    }
-                    else
-                    {
+                        break;
+                    default:
                         throw new Exception($"Invalid assignment! Expected to be  BOOL");
-                    }
                 }
             }
             else
@@ -249,7 +233,7 @@ public class Visitor : SimpleBaseVisitor<object?>
             if (variable.Contains('='))
             {
                 var var = variable.Split('=');
-               
+                
                 for(var i =0; i < var.Length; i++)
                 {
                     //ex: a = 1>=5   =>    {"a", "1>", "5"}
@@ -270,19 +254,17 @@ public class Visitor : SimpleBaseVisitor<object?>
                     
                 }
 
-                var varName = var[0];
-
-                if (char.IsDigit(varName[0]))
+                var variableName = var[0];
+                
+                if (char.IsDigit(variableName[0]))
                 {
-                    throw new Exception($"Syntax Error: {varName } is invalid variable name.");
+                    throw new Exception($"Syntax Error: {variableName } is invalid variable name.");
                 }
                 
-                var value = var[^1];
-                
-                bool isNum = int.TryParse(value, out var intValue), isFloat = float.TryParse(value, out var floatValue);
+                var variableValue = var[^1];
                 
                 //if the value string contains any of the compare operators
-                if (_compareOperators.Any(value.Contains!))
+                if (_compareOperators.Any(variableValue.Contains!))
                 {
                     var decList = context.declaratorlist();
                     for (int i = 0; i < decList.ChildCount; i++)
@@ -290,41 +272,51 @@ public class Visitor : SimpleBaseVisitor<object?>
                         var declarator = decList.declarator().value();
                         if (declarator.GetType() == typeof(SimpleParser.ComparisonExpressionContext))
                         {
-                            value = VisitComparisonExpression((SimpleParser.ComparisonExpressionContext)declarator)
+                            variableValue = VisitComparisonExpression((SimpleParser.ComparisonExpressionContext)declarator)
                                 ?.ToString();
                         }
                         if (declarator.GetType() == typeof(SimpleParser.LogicalExpressionContext))
                         {
-                            value = VisitLogicalExpression((SimpleParser.LogicalExpressionContext)declarator)
+                            variableValue = VisitLogicalExpression((SimpleParser.LogicalExpressionContext)declarator)
                                 ?.ToString();
                         }
                     }
-                }else if (!isNum || !isFloat)
-                {
-                    value = value[1..^1];
                 }
                 
-                VisitMultipleDeclaration(varName);
-                if (varDatatype == "CHAR" && !isNum)
+                VisitMultipleDeclaration(variableName);
+                
+                switch (varDatatype)
                 {
-                    CharVar[varName] = value;
-                }
-                else if (varDatatype == "INT" && isNum)
-                {
-                    IntVar[varName] = intValue;
-                }
-                else if (varDatatype == "FLOAT" && isFloat)
-                {
-                    FloatVar[varName] = floatValue;
-                }
-                else if (varDatatype == "BOOL" && (value == "TRUE" || value == "FALSE"))
-                {
-                    BoolVar[varName] = value;
-                }
-                else
-                {
-                    Console.WriteLine(value);
-                    throw new Exception($"Invalid assignment! expected to be {varDatatype}");
+                    case "CHAR" when variableValue!.Length > 3:
+                        throw new Exception($"Error: {variableValue} is not a valid character value.");
+                    case "CHAR":
+                        CharVar[variableName] = variableValue[1..^1];
+                        break;
+                    case "INT":
+                    {
+                        var isInteger = int.TryParse(variableValue, out var intValue);
+                        if (isInteger)
+                            IntVar[variableName] = intValue;
+                        else   
+                            throw new Exception($"Error: {variableValue} is not a valid integer value.");
+                        break;
+                    }
+                    case "FLOAT":
+                    {
+                        var isFloat = float.TryParse(variableValue, out var floatValue);
+                        if (isFloat)
+                            FloatVar[variableName] = floatValue;
+                        else
+                            throw new Exception($"Error: {variableValue} is not a valid floating value.");
+                        break;
+                    }
+                    case "BOOL" when variableValue is "\"TRUE\"" or "\"FALSE\"":
+                        BoolVar[variableName] = variableValue[1..^1];
+                        break;
+                    case "BOOL":
+                        throw new Exception($"Error: {variableValue} is not a valid boolean value.");
+                    default:
+                        throw new Exception($"Error: {varDatatype} is not recognized as a data type. ");
                 }
 
                 VisitDefaultDeclaration(varDatatype, variable);
@@ -333,14 +325,12 @@ public class Visitor : SimpleBaseVisitor<object?>
             { 
                 if (char.IsDigit(variable[0]))
                 {
-                    throw new Exception($"Syntax Error: {variable } is invalid variable name.");
+                    throw new Exception($"Syntax Error: {variable} is invalid variable name.");
                 }
                 VisitDefaultDeclaration(varDatatype, variable);
 
             }
-             
         }
-
         return null;
     }
 
@@ -362,16 +352,19 @@ public class Visitor : SimpleBaseVisitor<object?>
     {
         if (context.INTEGERVAL() != null)
         {
-            return int.Parse(context.INTEGERVAL().GetText());
+            return int.Parse(context.parent.GetText());
         }
+
         if (context.FLOATVAL() != null)
         {
-            return float.Parse(context.FLOATVAL().GetText());
+            return float.Parse(context.parent.GetText());
         }
-        if (context.CHARVAL() is {} c)
+
+        if (context.CHARVAL() is { } c)
         {
             return c.GetText()[1..^1];
         }
+
         if (context.BOOLVAL() != null)
         {
             return context.BOOLVAL().GetText() == "TRUE";
@@ -452,8 +445,7 @@ public class Visitor : SimpleBaseVisitor<object?>
             _ => throw new Exception($"Error: {operators} is not recognized as an multiplicative operator.")
         };
     }
-
-
+    
     public override object? VisitComparisonExpression(SimpleParser.ComparisonExpressionContext context)
     {
         var leftVal = Visit(context.value(0))?.ToString();
@@ -525,24 +517,19 @@ public class Visitor : SimpleBaseVisitor<object?>
 
     private object? VisitVariableValueChecker(string varName)
     {
-        if (CharVar.ContainsKey(varName))
+        if (CharVar.TryGetValue(varName, out var checker))
         {
-            return CharVar[varName];
+            return checker;
         }
-        if (IntVar.ContainsKey(varName))
+        if (IntVar.TryGetValue(varName, out var valueChecker))
         {
-            return IntVar[varName];
+            return valueChecker;
         }
-        if (FloatVar.ContainsKey(varName))
+        if (FloatVar.TryGetValue(varName, out var variableValueChecker))
         {
-            return FloatVar[varName];
+            return variableValueChecker;
         }
-        if (BoolVar.ContainsKey(varName))
-        {
-            return BoolVar[varName];
-        }
-
-        return null;
+        return BoolVar.TryGetValue(varName, out var checker1) ? checker1 : null;
     }
 
     public override object? VisitLogicalExpression(SimpleParser.LogicalExpressionContext context)
