@@ -1,6 +1,5 @@
 BEGIN CODE
-    BOOL a = "TRUE"
-    BOOL b = "TRUE"
-    BOOL c = a AND b
-    DISPLAY: c
+    INT xyz, abc=100
+    xyz= ((abc *5)/10 + 10) * -1
+    DISPLAY: xyz
 END CODE

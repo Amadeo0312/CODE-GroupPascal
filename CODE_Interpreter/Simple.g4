@@ -1,7 +1,7 @@
 grammar Simple;
 
 // PARSER RULES
-program: (COMMENT | NEWLINE)* BEGIN NEWLINE statements+ END (COMMENT | NEWLINE)*;
+program: (COMMENT | NEWLINE)* BEGIN NEWLINE statements END (COMMENT | NEWLINE)* EOF;
 
 statements: statement+;
 
@@ -17,13 +17,13 @@ functionCall: FUNCTIONNAME ': ' (value (',' value)*)?;
 
 declaratorlist: declarator | declarator ',' declaratorlist;
 
-declarator: VARIABLENAME | VARIABLENAME '=' value;
+declarator: VARIABLENAME | VARIABLENAME '='  value;
 
 
 constant: INTEGERVAL | FLOATVAL | CHARVAL | BOOLVAL | STRINGVAL;  
  
 value:
-	constant                       #constantExpression
+	constant          #constantExpression
 	| VARIABLENAME                 #variablenameExpression
 	| functionCall                 #functionCallExpression
 	| value compareOp value        #comparisonExpression
@@ -34,6 +34,7 @@ value:
 	| value concOp value           #concatenateExpression
 	| NEWLINEOP                    #newlineopExpression
 	| declarator                   #choyens
+	| '(' value ')'                #parenthesisExpression
     ; 
    
 mulDivOp: '*' | '/' | '%'; // Multiplication Division Modulo
