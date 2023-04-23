@@ -1,16 +1,16 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace CODE_Interpreter;
+﻿namespace CODE_Interpreter;
 
 public class Visitor : SimpleBaseVisitor<object?>
-{   
-    public Dictionary<string, object?> Functions { get; } = new();
-    public Dictionary<string, object?> CharVar { get; } = new();
-    public Dictionary<string, object?> IntVar { get; } = new();
-    public Dictionary<string, object?> FloatVar { get; } = new();
-    public Dictionary<string, object?> BoolVar { get; } = new();
-    
-    List<string?> _compareOperators = new List<string?> { ">", "<", ">=", "<=", "==", "<>" };
+{
+    private Dictionary<string, object?> Functions { get; } = new();
+    private Dictionary<string, object?> CharVar { get; } = new();
+    private Dictionary<string, object?> IntVar { get; } = new();
+    private Dictionary<string, object?> FloatVar { get; } = new();
+    private Dictionary<string, object?> BoolVar { get; } = new();
+
+    private readonly ArithmeticOperators _arithmeticOperators = new();
+
+    readonly List<string?> _compareOperators = new List<string?> { ">", "<", ">=", "<=", "==", "<>" };
     
     public Visitor()
     {
@@ -45,15 +45,15 @@ public class Visitor : SimpleBaseVisitor<object?>
             {
                 var userInput = Convert.ToChar(userVariables[countVariables]);
                 CharVar[arg.ToString()!] = userInput;
-            }else if (IntVar.ContainsKey(arg!.ToString()!))
+            }else if (IntVar.ContainsKey(arg.ToString()!))
             {
                 var userInput = Convert.ToInt32(userVariables[countVariables]);
                 IntVar[arg.ToString()!] = userInput;
-            }else if (FloatVar.ContainsKey(arg!.ToString()!))
+            }else if (FloatVar.ContainsKey(arg.ToString()!))
             {
                 var userInput = float.Parse(userVariables[countVariables]);
                 FloatVar[arg.ToString()!] = userInput;
-            }else if (BoolVar.ContainsKey(arg!.ToString()!))
+            }else if (BoolVar.ContainsKey(arg.ToString()!))
             {
                 var userInput = userVariables[countVariables];
                 if(userInput is "\"TRUE\"" or "\"FALSE\"")
@@ -68,9 +68,10 @@ public class Visitor : SimpleBaseVisitor<object?>
         }  
         return null;
     }
-    public void DefaultDeclaration(string varDatatype, string varName)
+
+    private void VisitDefaultDeclaration(string varDatatype, string varName)
     {
-        MultipleDeclaration(varName);
+        VisitMultipleDeclaration(varName);
         switch (varDatatype)
         {
             case "CHAR":
@@ -89,10 +90,10 @@ public class Visitor : SimpleBaseVisitor<object?>
                 throw new Exception($"Invalid assignment for variable {varName}: expected to be {varDatatype}");
         }
     }
-    
-    public void MultipleDeclaration(string varName)
+
+    private void VisitMultipleDeclaration(string varName)
     {
-        bool hasSame = CharVar.ContainsKey(varName) || IntVar.ContainsKey(varName) || FloatVar.ContainsKey(varName) || BoolVar.ContainsKey(varName);
+        var hasSame = CharVar.ContainsKey(varName) || IntVar.ContainsKey(varName) || FloatVar.ContainsKey(varName) || BoolVar.ContainsKey(varName);
 
         if (hasSame)
             throw new Exception($"Multiple declaration of Variable {varName}");
@@ -148,14 +149,13 @@ public class Visitor : SimpleBaseVisitor<object?>
     {
         var varName = context.assignList().GetText();
         var ass = varName.Split('=');
+        var value = Visit(context.value());
         
-        
-        foreach (string s in ass)
+        foreach (var s in ass)
         {
             
             if (CharVar.ContainsKey(s))
             {
-                var value = Visit(context.value());
                 if (value is string | value is char)
                 {
                     CharVar[s] = value;
@@ -165,7 +165,6 @@ public class Visitor : SimpleBaseVisitor<object?>
                     if (value == null)
                     {
                         Console.Error.WriteLine("Error: The " + s + " is not initialized");
-
                     }
                     else
                     {
@@ -176,7 +175,6 @@ public class Visitor : SimpleBaseVisitor<object?>
             }
             else if (IntVar.ContainsKey(s))
             {
-                var value = Visit(context.value());
                 if (value is int)
                 {
                     IntVar[s] = value;
@@ -196,7 +194,6 @@ public class Visitor : SimpleBaseVisitor<object?>
             }
             else if (FloatVar.ContainsKey(s))
             {
-                var value = Visit(context.value());
                 if (value is float)
                 {
                     FloatVar[s] = value;
@@ -216,7 +213,6 @@ public class Visitor : SimpleBaseVisitor<object?>
             }
             else if (BoolVar.ContainsKey(s))
             {
-                var value = Visit(context.value());
                 if (value is "TRUE" || value is "FALSE")
                 {
                     BoolVar[s] = value;
@@ -245,16 +241,16 @@ public class Visitor : SimpleBaseVisitor<object?>
     {
         var varDatatype = context.DATATYPE().GetText();
         var varDeclarator = context.declaratorlist().GetText();
-        string[] variableList = varDeclarator.Split(',');
-        int variableCount = variableList.Length;
+        var variableList = varDeclarator.Split(',');
+        //int variableCount = variableList.Length;
 
-        foreach (string variable in variableList)
+        foreach (var variable in variableList)
         {
             if (variable.Contains('='))
             {
-                string[] var = variable.Split('=');
+                var var = variable.Split('=');
                
-                for(int i =0; i < var.Length; i++)
+                for(var i =0; i < var.Length; i++)
                 {
                     //ex: a = 1>=5   =>    {"a", "1>", "5"}
                     //so we need to check the last character in each string to identify the compare operators ">=, <=, =="
@@ -281,17 +277,16 @@ public class Visitor : SimpleBaseVisitor<object?>
                     throw new Exception($"Syntax Error: {varName } is invalid variable name.");
                 }
                 
-                var value = var[var.Length - 1];
-                
-                int intValue;
-                float floatValue;
-                bool isNum = int.TryParse(value, out intValue), isFloat = float.TryParse(value, out floatValue);
+                var value = var[^1];
+
+                var isNum = int.TryParse(value, out var intValue); 
+                var isFloat = float.TryParse(value, out var floatValue);
                 
                 //if the value string contains any of the compare operators
                 if (_compareOperators.Any(value.Contains!))
                 {
                     var decList = context.declaratorlist();
-                    for (int i = 0; i < decList.ChildCount; i++)
+                    for (var i = 0; i < decList.ChildCount; i++)
                     {
                         var declarator = decList.declarator().value();
                         if (declarator.GetType() == typeof(SimpleParser.ComparisonExpressionContext))
@@ -305,30 +300,28 @@ public class Visitor : SimpleBaseVisitor<object?>
                     value = value[1..^1];
                 }
                 
-                MultipleDeclaration(varName);
-                if (varDatatype == "CHAR" && !isNum)
+                VisitMultipleDeclaration(varName);
+                
+                switch (varDatatype)
                 {
-                    CharVar[varName] = value;
+                    case "CHAR" when !isNum:
+                        CharVar[varName] = value;
+                        break;
+                    case "INT" when isNum:
+                        IntVar[varName] = intValue;
+                        break;
+                    case "FLOAT" when isFloat:
+                        FloatVar[varName] = floatValue;
+                        break;
+                    case "BOOL" when value is "TRUE" or "FALSE":
+                        BoolVar[varName] = value;
+                        break;
+                    default:
+                        Console.WriteLine(value);
+                        throw new Exception($"Invalid assignment! expected to be {varDatatype}");
                 }
-                else if (varDatatype == "INT" && isNum)
-                {
-                    IntVar[varName] = intValue;
-                }
-                else if (varDatatype == "FLOAT" && isFloat)
-                {
-                    FloatVar[varName] = floatValue;
-                }
-                else if (varDatatype == "BOOL" && (value == "TRUE" || value == "FALSE"))
-                {
-                    BoolVar[varName] = value;
-                }
-                else
-                {
-                    Console.WriteLine(value);
-                    throw new Exception($"Invalid assignment! expected to be {varDatatype}");
-                }
-
-                DefaultDeclaration(varDatatype, variable);
+                
+                VisitDefaultDeclaration(varDatatype, variable);
             }
             else
             { 
@@ -336,10 +329,8 @@ public class Visitor : SimpleBaseVisitor<object?>
                 {
                     throw new Exception($"Syntax Error: {variable } is invalid variable name.");
                 }
-                DefaultDeclaration(varDatatype, variable);
-
+                VisitDefaultDeclaration(varDatatype, variable);
             }
-             
         }
 
         return null;
@@ -353,10 +344,9 @@ public class Visitor : SimpleBaseVisitor<object?>
             return varName;
         }
 
-        if (variableValueChecker(varName) != null)
-            return variableValueChecker(varName);
-        else
-           throw new Exception($"Variable {varName} is not defined");
+        if (VisitVariableValueChecker(varName) != null)
+            return VisitVariableValueChecker(varName);
+        throw new Exception($"Variable {varName} is not defined");
     }
 
     public override object? VisitConstant(SimpleParser.ConstantContext context)
@@ -388,10 +378,7 @@ public class Visitor : SimpleBaseVisitor<object?>
 
     public override object? VisitNewlineopExpression(SimpleParser.NewlineopExpressionContext context)
     {
-        if (context.NEWLINEOP() != null)
-            return "\n";
-        
-        return null;
+        return context.NEWLINEOP() != null ? "\n" : null;
     }
 
     public override object? VisitConcatenateExpression(SimpleParser.ConcatenateExpressionContext context)
@@ -422,17 +409,44 @@ public class Visitor : SimpleBaseVisitor<object?>
         throw new Exception($"Invalid concatenation operator: '{op}'");
     }
 
+    public override object? VisitParenthesisExpression(SimpleParser.ParenthesisExpressionContext context)
+    {
+        return Visit(context.value());
+    }
+
+    public override object? VisitAdditiveExpression(SimpleParser.AdditiveExpressionContext context)
+    {
+        var leftValue = Visit(context.value(0));
+        var rightValue = Visit(context.value(1));
+        var operators = context.addMinOp().GetText();
+        return operators switch
+        {
+            "+" => _arithmeticOperators.VisitAdd(leftValue, rightValue),
+            "-" => _arithmeticOperators.VisitSubtract(leftValue, rightValue),
+            _ => throw new Exception($"Error: {operators} is not recognized as an additive operator.")
+        };
+    }
+
+    public override object? VisitMultiplicativeExpression(SimpleParser.MultiplicativeExpressionContext context)
+    {
+        var leftValue = Visit(context.value(0));
+        var rightValue = Visit(context.value(1));
+        var operators = context.mulDivOp().GetText();
+        return operators switch
+        {
+            "*" => _arithmeticOperators.VisitMultiply(leftValue, rightValue),
+            "/" => _arithmeticOperators.VisitDivide(leftValue, rightValue),
+            "%" => _arithmeticOperators.VisitModulo(leftValue, rightValue),
+            _ => throw new Exception($"Error: {operators} is not recognized as an multiplicative operator.")
+        };
+    }
 
     public override object? VisitComparisonExpression(SimpleParser.ComparisonExpressionContext context)
     {
         var leftVal = Visit(context.value(0))?.ToString();
         var rightVal = Visit(context.value(1))?.ToString();
         var op = context.compareOp().GetText();
-
-        float LVal = 0;
-        float RVal = 0;
         
-        int intValue;
         float floatValue;
 
         //">", "<", ">=", "<=", "==", "<>"
@@ -496,31 +510,23 @@ public class Visitor : SimpleBaseVisitor<object?>
         return null;
     }
 
-    public object? variableValueChecker(string varName)
+    private object? VisitVariableValueChecker(string varName)
     {
-        if (CharVar.ContainsKey(varName))
+        if (CharVar.TryGetValue(varName, out var checker))
         {
-            return CharVar[varName];
+            return checker;
         }
-        if (IntVar.ContainsKey(varName))
+        if (IntVar.TryGetValue(varName, out var valueChecker))
         {
-            return IntVar[varName];
+            return valueChecker;
         }
-        if (FloatVar.ContainsKey(varName))
+        if (FloatVar.TryGetValue(varName, out var checker1))
         {
-            return FloatVar[varName];
+            return checker1;
         }
-        if (BoolVar.ContainsKey(varName))
-        {
-            return BoolVar[varName];
-        }
-
-        return null;
+        return BoolVar.TryGetValue(varName, out var valueChecker1) ? valueChecker1 : null;
     }
     
-    
-    
-
     // public override object? VisitAdditiveExpression(SimpleParser.AdditiveExpressionContext context)
     // {
     //     var left = Visit(context.value(0));

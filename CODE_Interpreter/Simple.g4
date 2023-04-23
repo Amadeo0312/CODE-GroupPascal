@@ -33,6 +33,7 @@ value:
 	| value concOp value           #concatenateExpression
 	| NEWLINEOP                    #newlineopExpression
 	| declarator                   #choyens
+	| '(' value ')'                #parenthesisExpression
     ; 
    
 mulDivOp: '*' | '/' | '%'; // Multiplication Division Modulo
@@ -50,7 +51,7 @@ NEWLINEOP: '$';
 DATATYPE: 'BOOL' | 'CHAR' | 'INT' | 'FLOAT';
 BOOLVAL: 'TRUE' | 'FALSE';
 CHARVAL: '\'' ([a-zA-Z] | [0-9]) '\'';
-INTEGERVAL: ('-')? [0-9]+;
+INTEGERVAL: ('-')?[0-9]+;
 FLOATVAL: ('-')? [0-9]+ '.' ('-')? [0-9]+;
 STRINGVAL: ('"' ~'"'* '"')
 	| ('\'' ~'\''* '\'')

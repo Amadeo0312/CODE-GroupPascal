@@ -1,6 +1,5 @@
 BEGIN CODE
-    INT b = 10
-    BOOL a
-    a = 'a' <> 'b'
-    DISPLAY: a
+    INT x, y = 5
+    x = y + 2
+    DISPLAY x;
 END CODE
