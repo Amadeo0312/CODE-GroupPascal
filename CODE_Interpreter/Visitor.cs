@@ -43,20 +43,24 @@ public class Visitor : SimpleBaseVisitor<object?>
         {
             if (CharVar.ContainsKey(arg!.ToString()!))
             {
-                var userInput = Convert.ToChar(userVariables[countVariables]);
+                var str = userVariables[countVariables].Trim();
+                var userInput = Convert.ToChar(str);
                 CharVar[arg.ToString()!] = userInput;
             }else if (IntVar.ContainsKey(arg.ToString()!))
             {
-                var userInput = Convert.ToInt32(userVariables[countVariables]);
+                var str = userVariables[countVariables].Trim();
+                var userInput = Convert.ToInt32(str);
                 IntVar[arg.ToString()!] = userInput;
             }else if (FloatVar.ContainsKey(arg.ToString()!))
             {
-                var userInput = float.Parse(userVariables[countVariables]);
+                var str = userVariables[countVariables].Trim();
+                var userInput = float.Parse(str);
                 FloatVar[arg.ToString()!] = userInput;
             }else if (BoolVar.ContainsKey(arg.ToString()!))
             {
-                var userInput = userVariables[countVariables];
-                if(userInput is "\"TRUE\"" or "\"FALSE\"")
+                var str = userVariables[countVariables].Trim();
+                var userInput = str;
+                if(userInput is "TRUE" or "FALSE")
                     BoolVar[arg.ToString()!] = userInput;
                 else
                     throw new Exception("Error: Expected a boolean value.");

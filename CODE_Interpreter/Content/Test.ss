@@ -1,5 +1,6 @@
 BEGIN CODE
-    INT xyz, abc=100
-    xyz= ((abc *5)/10 + 10) * -1
-    DISPLAY: xyz
+    BOOL y
+    FLOAT a
+    SCAN: a
+    DISPLAY: a
 END CODE
