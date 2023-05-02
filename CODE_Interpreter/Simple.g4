@@ -5,7 +5,15 @@ program: (COMMENT | NEWLINE)* BEGIN NEWLINE statements END (COMMENT | NEWLINE)* 
 
 statements: statement+;
 
-statement: (vardec | assign | functionCall) NEWLINE;
+statement: (vardec | assign | functionCall | condstmt) NEWLINE;
+
+condstmt : ifstmt (elseifstmt)* (elsestmt)*;
+
+ifstmt : 'IF' '(' value ')' (COMMENT | NEWLINE)* 'BEGIN IF' NEWLINE statements 'END IF' (COMMENT | NEWLINE)*;
+
+elseifstmt: 'ELSE IF' '(' value ')' (COMMENT | NEWLINE)* 'BEGIN IF' NEWLINE statements 'END IF' (COMMENT | NEWLINE)*;
+
+elsestmt: 'ELSE' (COMMENT | NEWLINE)* 'BEGIN IF' NEWLINE statements 'END IF' (COMMENT | NEWLINE)*;
 
 vardec: DATATYPE declaratorlist ;
 
