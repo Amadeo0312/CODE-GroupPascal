@@ -1,7 +1,7 @@
 BEGIN CODE
     CHAR a = 'a'
     CHAR b = 'b'
-    IF ( 1 < 2)
+    IF ( 1 > 2)
     BEGIN IF
         DISPLAY: a
     END IF

@@ -569,38 +569,29 @@ public class Visitor : SimpleBaseVisitor<object?>
 
     public override object? VisitCondstmt(SimpleParser.CondstmtContext context)
     {
-        List<int> checker = new List<int>();
         for (int i = 0; i < context.ChildCount; i++)
         {
             if (context.GetChild(i).GetChild(0).GetText() == "IF")
             {
-                
                 var res = VisitIfstmt((SimpleParser.IfstmtContext)context.GetChild(i));
-                Console.WriteLine("Hello IF");
                 if (res != null)
                 {
-                    Console.WriteLine("Hello");
-                    return res;
+                    break;
                 }
-                
-                checker.Add(1);
             }
             else if (context.GetChild(i).GetChild(0).GetText() == "ELSE IF")
             {
                 var res = VisitElseifstmt((SimpleParser.ElseifstmtContext)context.GetChild(i));
                 if (res != null)
                 {
-                    Console.WriteLine("Hello");
-                    return res;
+                    break;
                 }
-                checker.Add(1);
             }
-            else if (checker.Count(n => n == 1) == context.ChildCount - 1)
+            else if (context.GetChild(i).GetChild(0).GetText() == "ELSE" )
             {
                 return VisitElsestmt((SimpleParser.ElsestmtContext)context.GetChild(i));
             }
         }
-
         return null;
     }
 
@@ -611,7 +602,8 @@ public class Visitor : SimpleBaseVisitor<object?>
 
         if (value?.ToString() == "TRUE")
         {
-            return base.VisitIfstmt(context);
+            base.VisitIfstmt(context);
+            return true;
         }
         else if (value?.ToString() == "FALSE")
         {
@@ -621,7 +613,7 @@ public class Visitor : SimpleBaseVisitor<object?>
         {
             Console.Error.WriteLine("Invalid boolean expression on IF statement");
             Environment.Exit(1);
-            return false;
+            return null;
         }
     }
 
