@@ -569,6 +569,7 @@ public class Visitor : SimpleBaseVisitor<object?>
 
     public override object? VisitCondstmt(SimpleParser.CondstmtContext context)
     {
+        bool checker = false;
         for (int i = 0; i < context.ChildCount; i++)
         {
             if (context.GetChild(i).GetChild(0).GetText() == "IF")
@@ -623,7 +624,8 @@ public class Visitor : SimpleBaseVisitor<object?>
 
         if (value?.ToString() == "TRUE" || value?.ToString() == "FALSE")
         {
-            return base.VisitElseifstmt(context);
+            base.VisitElseifstmt(context);
+            return true;
         }
         else if (value?.ToString() == "FALSE")
         {

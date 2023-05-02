@@ -1,12 +1,16 @@
 BEGIN CODE
-    CHAR a = 'a'
-    CHAR b = 'b'
-    IF ( 1 > 2)
+    INT a = 1
+    INT b = 2
+    IF (a>b)
     BEGIN IF
-        DISPLAY: a
+        DISPLAY: 'IF'
+    END IF
+    ELSE IF (a<b)
+    BEGIN IF
+        DISPLAY: 'ELSE IF'
     END IF
     ELSE
     BEGIN IF
-        DISPLAY: b
+        DISPLAY: 'ELSE'
     END IF
 END CODE
