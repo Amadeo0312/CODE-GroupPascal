@@ -567,54 +567,86 @@ public class Visitor : SimpleBaseVisitor<object?>
         }
     }
 
+    public override object? VisitCondstmt(SimpleParser.CondstmtContext context)
+    {
+        List<int> checker = new List<int>();
+        for (int i = 0; i < context.ChildCount; i++)
+        {
+            if (context.GetChild(i).GetChild(0).GetText() == "IF")
+            {
+                
+                var res = VisitIfstmt((SimpleParser.IfstmtContext)context.GetChild(i));
+                Console.WriteLine("Hello IF");
+                if (res != null)
+                {
+                    Console.WriteLine("Hello");
+                    return res;
+                }
+                
+                checker.Add(1);
+            }
+            else if (context.GetChild(i).GetChild(0).GetText() == "ELSE IF")
+            {
+                var res = VisitElseifstmt((SimpleParser.ElseifstmtContext)context.GetChild(i));
+                if (res != null)
+                {
+                    Console.WriteLine("Hello");
+                    return res;
+                }
+                checker.Add(1);
+            }
+            else if (checker.Count(n => n == 1) == context.ChildCount - 1)
+            {
+                return VisitElsestmt((SimpleParser.ElsestmtContext)context.GetChild(i));
+            }
+        }
 
-    // public override object? VisitAdditiveExpression(SimpleParser.AdditiveExpressionContext context)
-    // {
-    //     var left = Visit(context.value(0));
-    //     var right = Visit(context.value(1));
-    //
-    //     var op = context.addMinOp().GetText();
-    //
-    //     return op switch
-    //     {
-    //         "+" => Add(left, right),
-    //         //"-" => Subtract(left, right),
-    //         _ => throw new NotImplementedException()
-    //     };
-    // }
-    //
-    // private object? Add(object? left, object? right)
-    // {
-    //     if (left is int l && right is int r)
-    //     {
-    //         return l + r;
-    //     }
-    //
-    //     if (left is float lf && right is float rf)
-    //     {
-    //         return lf + rf;
-    //     }
-    //
-    //     if (left is int lInt && right is float rFloat)
-    //     {
-    //         return lInt + rFloat;
-    //     }
-    //     
-    //     if (left is float lFloat && right is int rInt)
-    //     {
-    //         return lFloat + rInt;
-    //     }
-    //
-    //     if (left is string)
-    //     {
-    //         return $"{left}{right}";
-    //     }
-    //
-    //     if (left is string || right is string)
-    //     {
-    //         return $"{left}{right}";
-    //     }
-    //
-    //     throw new NotImplementedException($"Cannot add values of types {left?.GetType()} and {right?.GetType()}");
-    // }
+        return null;
+    }
+
+
+    public override object? VisitIfstmt(SimpleParser.IfstmtContext context)
+    {
+        var value = Visit(context.value());
+
+        if (value?.ToString() == "TRUE")
+        {
+            return base.VisitIfstmt(context);
+        }
+        else if (value?.ToString() == "FALSE")
+        {
+            return null;
+        }
+        else
+        {
+            Console.Error.WriteLine("Invalid boolean expression on IF statement");
+            Environment.Exit(1);
+            return false;
+        }
+    }
+
+    public override object? VisitElseifstmt(SimpleParser.ElseifstmtContext context)
+    {
+        var value = Visit(context.value());
+
+        if (value?.ToString() == "TRUE" || value?.ToString() == "FALSE")
+        {
+            return base.VisitElseifstmt(context);
+        }
+        else if (value?.ToString() == "FALSE")
+        {
+            return null;
+        }
+        else
+        {
+            Console.Error.WriteLine("Invalid boolean expression on ELSE IF statement");
+            Environment.Exit(1);
+            return null;
+        }
+    }
+
+    public override object? VisitElsestmt(SimpleParser.ElsestmtContext context)
+    {
+        return base.VisitElsestmt(context);
+    }
 }
