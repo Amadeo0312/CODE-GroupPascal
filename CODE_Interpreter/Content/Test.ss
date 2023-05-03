@@ -1,16 +1,16 @@
 BEGIN CODE
     INT a = 1
     INT b = 2
-    IF (a>b)
+    IF (1 > 2)
     BEGIN IF
-        DISPLAY: 'IF'
+        DISPLAY: 'ELSE IF1'
     END IF
-    ELSE IF (a<b)
+    ELSE IF (1 > 2)
     BEGIN IF
-        DISPLAY: 'ELSE IF'
+        DISPLAY: 'ELSE IF2'
     END IF
-    ELSE
+    ELSE IF (2 > 1)
     BEGIN IF
-        DISPLAY: 'ELSE'
+        DISPLAY: 'ELSE IF3'
     END IF
 END CODE

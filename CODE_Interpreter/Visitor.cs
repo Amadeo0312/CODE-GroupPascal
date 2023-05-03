@@ -622,7 +622,7 @@ public class Visitor : SimpleBaseVisitor<object?>
     {
         var value = Visit(context.value());
 
-        if (value?.ToString() == "TRUE" || value?.ToString() == "FALSE")
+        if (value?.ToString() == "TRUE")
         {
             base.VisitElseifstmt(context);
             return true;
