@@ -5,7 +5,7 @@ program: (COMMENT | NEWLINE)* BEGIN NEWLINE statements END (COMMENT | NEWLINE)* 
 
 statements: statement+;
 
-statement: (vardec | assign | functionCall | condstmt) NEWLINE;
+statement: (vardec | assign | functionCall | condstmt | whileCondition) NEWLINE;
 
 condstmt : ifstmt (elseifstmt)* (elsestmt)*;
 
@@ -26,6 +26,10 @@ functionCall: FUNCTIONNAME ': ' (value (',' value)*)?;
 declaratorlist: declarator | declarator ',' declaratorlist;
 
 declarator: VARIABLENAME | VARIABLENAME '='  value;
+
+whileBlock: 'BEGIN WHILE' (COMMENT | NEWLINE)* statements 'END WHILE' (COMMENT | NEWLINE)*;
+
+whileCondition: 'WHILE' '(' value ')' (COMMENT | NEWLINE)* whileBlock;
 
 
 constant: INTEGERVAL | FLOATVAL | CHARVAL | BOOLVAL | STRINGVAL;  

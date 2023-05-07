@@ -639,6 +639,24 @@ public class Visitor : SimpleBaseVisitor<object?>
         }
     }
 
+    public override object? VisitWhileBlock(SimpleParser.WhileBlockContext context)
+    {
+        base.VisitWhileBlock(context);
+        return true;
+    }
+
+    public override object? VisitWhileCondition(SimpleParser.WhileConditionContext context)
+    {
+        var state = Visit(context.value());
+
+        while (state is string b && b == "TRUE")
+        {
+            Visit(context.whileBlock());
+            state = Visit(context.value());
+        }
+        return null;
+    }
+
     public override object? VisitElsestmt(SimpleParser.ElsestmtContext context)
     {
         return base.VisitElsestmt(context);
