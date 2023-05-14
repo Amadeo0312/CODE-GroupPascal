@@ -1,4 +1,7 @@
-﻿namespace CODE_Interpreter;
+﻿using System.Windows.Markup;
+using Antlr4.Runtime;
+
+namespace CODE_Interpreter;
 
 public class Visitor : SimpleBaseVisitor<object?>
 {
@@ -648,13 +651,53 @@ public class Visitor : SimpleBaseVisitor<object?>
     public override object? VisitWhileCondition(SimpleParser.WhileConditionContext context)
     {
         var state = Visit(context.value());
-
         while (state is string b && b == "TRUE")
         {
             Visit(context.whileBlock());
             state = Visit(context.value());
         }
         return null;
+    }
+
+    public override object? VisitSwitchCondition(SimpleParser.SwitchConditionContext context)
+    {
+        var valueContext = Visit(context.value());
+        var switchValue = valueContext!.ToString();
+        Console.WriteLine(switchValue);
+        VisitSwitchBlock(context.switchBlock(), switchValue!);
+        return null;
+    }
+
+    public object? VisitSwitchBlock(SimpleParser.SwitchBlockContext context, string switchValue)
+    {
+        var visited = false;
+        foreach (var caseContext in context.caseBlock())
+        {
+            if (caseContext.value().GetText() == switchValue)
+            {
+                VisitCaseBlock(caseContext);
+                visited = true;
+                break;
+            }
+        }
+
+        if (!visited && context.defaultBlock() != null)
+        {
+            VisitDefaultBlock(context.defaultBlock());
+        }
+        return null;
+    }
+
+    public override object? VisitCaseBlock(SimpleParser.CaseBlockContext context)
+    {
+        base.VisitCaseBlock(context);
+        return true;
+    }
+
+    public override object? VisitDefaultBlock(SimpleParser.DefaultBlockContext context)
+    {
+        base.VisitDefaultBlock(context);
+        return true;
     }
 
     public override object? VisitElsestmt(SimpleParser.ElsestmtContext context)

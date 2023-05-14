@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>Nullable</WarningsAsErrors>
+    <NoWarn>3021;0168;0219</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

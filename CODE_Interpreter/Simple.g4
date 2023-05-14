@@ -5,7 +5,7 @@ program: (COMMENT | NEWLINE)* BEGIN NEWLINE statements END (COMMENT | NEWLINE)* 
 
 statements: statement+;
 
-statement: (vardec | assign | functionCall | condstmt | whileCondition) NEWLINE;
+statement: (vardec | assign | functionCall | condstmt | whileCondition | switchCondition) NEWLINE;
 
 condstmt : ifstmt (elseifstmt)* (elsestmt)*;
 
@@ -31,11 +31,19 @@ whileBlock: 'BEGIN WHILE' (COMMENT | NEWLINE)* statements 'END WHILE' (COMMENT |
 
 whileCondition: 'WHILE' '(' value ')' (COMMENT | NEWLINE)* whileBlock;
 
+switchBlock: 'BEGIN SWITCH' (COMMENT | NEWLINE)* (caseBlock)* defaultBlock? 'END SWITCH' (COMMENT | NEWLINE)*;
+
+switchCondition: 'SWITCH' '(' value ')' (COMMENT | NEWLINE)* switchBlock;
+
+caseBlock: 'CASE ' value ':' (COMMENT | NEWLINE)* statements (COMMENT | NEWLINE)* 'BREAK' (COMMENT | NEWLINE)*;
+
+defaultBlock: 'DEFAULT:' (COMMENT | NEWLINE)* statements (COMMENT | NEWLINE)* 'BREAK' (COMMENT | NEWLINE)*;
+
 
 constant: INTEGERVAL | FLOATVAL | CHARVAL | BOOLVAL | STRINGVAL;  
  
-value:
-	constant          #constantExpression
+value
+    :constant                      #constantExpression
 	| VARIABLENAME                 #variablenameExpression
 	| functionCall                 #functionCallExpression
 	| value compareOp value        #comparisonExpression
