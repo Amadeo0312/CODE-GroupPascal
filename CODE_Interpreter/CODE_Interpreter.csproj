@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Simple.g4" />
+    <Content Include="Grammar\Grammar.g4" />
   </ItemGroup>
 
 </Project>
