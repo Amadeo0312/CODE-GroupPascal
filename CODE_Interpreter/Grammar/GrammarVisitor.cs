@@ -1,9 +1,7 @@
-﻿using System.Windows.Markup;
-using Antlr4.Runtime;
+﻿using CODE_Interpreter.Operators;
+namespace CODE_Interpreter.Grammar;
 
-namespace CODE_Interpreter;
-
-public class Visitor : SimpleBaseVisitor<object?>
+public class GrammarVisitor : GrammarBaseVisitor<object?>
 {
     private Dictionary<string, object?> Functions { get; } = new();
     private Dictionary<string, object?> CharVar { get; } = new();
@@ -14,34 +12,34 @@ public class Visitor : SimpleBaseVisitor<object?>
     private readonly ArithmeticOperators _arithmeticOperators = new();
 
     private readonly List<string?> _compareOperators = new List<string?> { ">", "<", ">=", "<=", "==", "<>", "AND", "OR", "NOT" };
-    
-    public Visitor()
+
+    public GrammarVisitor()
     {
         Functions["DISPLAY"] = new Func<object?[], object?>(VisitDisplay);
         Functions["SCAN"] = new Func<object?[], object?>(VisitScan);
     }
-    
-    private object? VisitDisplay(object?[] args)
+
+    private static object? VisitDisplay(object?[] args)
     {
         foreach (var arg in args)
         {
             if (arg == null)
             {
-                Console.Error.WriteLine("Error: Incompatible type null.");
+                Console.Error.WriteLine(" ERR! Incompatible type.");
             }
             Console.Write(arg);
         }
 
         return null;
     }
-    
+
     private object? VisitScan(object?[] args)
     {
         Console.Write("SCAN: ");
         var input = Console.ReadLine() ?? throw new InvalidOperationException();
         var userVariables = input.Split(',');
         var countVariables = 0;
-        
+
         foreach (var arg in args)
         {
             if (CharVar.ContainsKey(arg!.ToString()!))
@@ -49,30 +47,37 @@ public class Visitor : SimpleBaseVisitor<object?>
                 var str = userVariables[countVariables].Trim();
                 var userInput = Convert.ToChar(str);
                 CharVar[arg.ToString()!] = userInput;
-            }else if (IntVar.ContainsKey(arg.ToString()!))
+            }
+            else if (IntVar.ContainsKey(arg.ToString()!))
             {
                 var str = userVariables[countVariables].Trim();
                 var userInput = Convert.ToInt32(str);
                 IntVar[arg.ToString()!] = userInput;
-            }else if (FloatVar.ContainsKey(arg.ToString()!))
+            }
+            else if (FloatVar.ContainsKey(arg.ToString()!))
             {
                 var str = userVariables[countVariables].Trim();
                 var userInput = float.Parse(str);
                 FloatVar[arg.ToString()!] = userInput;
-            }else if (BoolVar.ContainsKey(arg.ToString()!))
+            }
+            else if (BoolVar.ContainsKey(arg.ToString()!))
             {
                 var str = userVariables[countVariables].Trim();
-                var userInput = str;
-                if(userInput is "TRUE" or "FALSE")
-                    BoolVar[arg.ToString()!] = userInput;
+                if (str is "TRUE" or "FALSE")
+                    BoolVar[arg.ToString()!] = str;
                 else
-                    throw new Exception("Error: Expected a boolean value.");
+                {
+                    Console.Error.WriteLine(" ERR! Expected a boolean value.");
+                    Environment.Exit(1);
+                }
             }
             else
-                throw new Exception("Error: Identifier is not declared.");
-            
+            {
+                Console.Error.WriteLine(" ERR! Identifier is not declared.");
+                Environment.Exit(1);
+            }
             countVariables++;
-        }  
+        }
         return null;
     }
 
@@ -94,7 +99,9 @@ public class Visitor : SimpleBaseVisitor<object?>
                 BoolVar[varName] = null;
                 break;
             default:
-                throw new Exception($"Invalid assignment for variable {varName}: expected to be {varDatatype}");
+                Console.Error.WriteLine($" ERR! Invalid assignment! Expected to be {varDatatype}");
+                Environment.Exit(1);
+                break;
         }
     }
 
@@ -103,61 +110,75 @@ public class Visitor : SimpleBaseVisitor<object?>
         var hasSame = CharVar.ContainsKey(varName) || IntVar.ContainsKey(varName) || FloatVar.ContainsKey(varName) || BoolVar.ContainsKey(varName);
 
         if (hasSame)
-            throw new Exception($"Multiple declaration of Variable {varName}");
+        {
+            Console.Error.WriteLine($" ERR! Multiple declaration of Variable {varName}");
+            Environment.Exit(1);
+        }
     }
 
-    public override object? VisitStatement(SimpleParser.StatementContext context)
+    public override object? VisitStatement(GrammarParser.StatementContext context)
     {
         var newLine = context.NEWLINE().ToString();
 
         if (!newLine!.Contains(Environment.NewLine))
         {
-            throw new Exception("Syntax Error: Invalid Code Format");
+            Console.Error.WriteLine(" ERR! Invalid Code Format");
+            Environment.Exit(1);
         }
-        
+
         return base.VisitStatement(context);
     }
 
-    public override object? VisitFunctionCall(SimpleParser.FunctionCallContext context)
+    public override object? VisitFunctionCall(GrammarParser.FunctionCallContext context)
     {
         var funcName = context.FUNCTIONNAME().GetText();
         var args = context.value().Select(Visit).ToArray();
-        
-        if(args.Length == 0)
-            throw new Exception($"Display has no input");
+
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine(" ERR! Display has no input");
+            Environment.Exit(1);
+        }
         
         var argType = context.value(0).GetType().ToString();
         if (argType == "CODE_Interpreter.GrammarParser+ConstantExpressionContext" &&
             (args[0] is int || args[0] is float))
         {
-            throw new Exception($"Invalid operands for concatenation");
+            Console.Error.WriteLine(" ERR! Invalid operands for concatenation");
+            Environment.Exit(1);
         }
 
         if (!Functions.ContainsKey(funcName))
         {
-            throw new Exception($"Function {funcName} is not defined");
+            Console.Error.WriteLine($" ERR! Function {funcName} is not defined");
+            Environment.Exit(1);
         }
 
-        if (Functions[funcName] is not Func<object?[], object?> func)
+        if (Functions[funcName] is Func<object?[], object?> func)
         {
-            throw new Exception($"{funcName} is not a function");
+            return func(args);
+        }
+        else
+        {
+            Console.Error.WriteLine($" ERR! {funcName} is not a function");
+            Environment.Exit(1);
         }
         
-        return func(args);
+        return null;
     }
 
-    public override object? VisitAssignList(SimpleParser.AssignListContext context)
+    public override object VisitAssignList(GrammarParser.AssignListContext context)
     {
         var varName = context.VARIABLENAME().Select(Visit).ToArray();
         return varName;
     }
 
-    public override object? VisitAssign(SimpleParser.AssignContext context)
+    public override object? VisitAssign(GrammarParser.AssignContext context)
     {
         var varName = context.assignList().GetText();
         var ass = varName.Split('=');
         var value = Visit(context.value());
-        
+
         foreach (var s in ass)
         {
             if (CharVar.ContainsKey(s))
@@ -170,12 +191,13 @@ public class Visitor : SimpleBaseVisitor<object?>
                 {
                     if (value == null)
                     {
-                        Console.Error.WriteLine("Error: The " + s + " is not initialized");
-
+                        Console.Error.WriteLine(" ERR! Error: The " + s + " is not initialized");
+                        Environment.Exit(1);
                     }
                     else
                     {
-                        throw new Exception($"Invalid assignment for variable {varName}: expected to be CHAR");
+                        Console.Error.WriteLine($" ERR! Invalid assignment! Expected to be CHAR");
+                        Environment.Exit(1);
                     }
                 }
             }
@@ -187,10 +209,13 @@ public class Visitor : SimpleBaseVisitor<object?>
                         IntVar[s] = intValue;
                         break;
                     case null:
-                        Console.Error.WriteLine( s + " is not initialized");
+                        Console.Error.WriteLine($" ERR! {s} is not initialized");
+                        Environment.Exit(1);
                         break;
                     default:
-                        throw new Exception($"Invalid assignment! Expected to be INT");
+                        Console.Error.WriteLine(" ERR! Invalid assignment! Expected to be INT");
+                        Environment.Exit(1);
+                        break;
                 }
             }
             else if (FloatVar.ContainsKey(s))
@@ -201,10 +226,13 @@ public class Visitor : SimpleBaseVisitor<object?>
                         FloatVar[s] = floatValue;
                         break;
                     case null:
-                        Console.Error.WriteLine( s + " is not initialized");
+                        Console.Error.WriteLine($" ERR! {s} is not initialized");
+                        Environment.Exit(1);
                         break;
                     default:
-                        throw new Exception($"Invalid assignment! Expected to be  FLOAT");
+                        Console.Error.WriteLine(" ERR! Invalid assignment! Expected to be  FLOAT");
+                        Environment.Exit(1);
+                        break;
                 }
             }
             else if (BoolVar.ContainsKey(s))
@@ -216,20 +244,26 @@ public class Visitor : SimpleBaseVisitor<object?>
                         BoolVar[s] = value;
                         break;
                     case null:
-                        Console.Error.WriteLine( s + " is not initialized");
+                        Console.Error.WriteLine($" ERR! {s} is not initialized");
+                        Environment.Exit(1);
                         break;
                     default:
-                        throw new Exception($"Invalid assignment! Expected to be  BOOL");
+                        Console.Error.WriteLine(" ERR! Invalid assignment! Expected to be  BOOL");
+                        Environment.Exit(1);
+                        break;
                 }
             }
             else
             {
-                throw new Exception($"Error: Unknown symbol {s}");
+                Console.Error.WriteLine($" ERR! Unknown symbol {s}");
+                Environment.Exit(1);
             }
         }
+        
         return null;
     }
-    public override object? VisitVardec(SimpleParser.VardecContext context)
+
+    public override object? VisitVariableDeclaration(GrammarParser.VariableDeclarationContext context)
     {
         var varDatatype = context.DATATYPE().GetText();
         var varDeclarator = context.declaratorlist().GetText();
@@ -240,8 +274,8 @@ public class Visitor : SimpleBaseVisitor<object?>
             if (variable.Contains('='))
             {
                 var var = variable.Split('=');
-                
-                for(var i =0; i < var.Length; i++)
+
+                for (var i = 0; i < var.Length; i++)
                 {
                     //ex: a = 1>=5   =>    {"a", "1>", "5"}
                     //so we need to check the last character in each string to identify the compare operators ">=, <=, =="
@@ -252,110 +286,134 @@ public class Visitor : SimpleBaseVisitor<object?>
                     }
                     //if "==", it will create a string with empty string
                     //ex "a = 1==1" => var = { "a", "1", "", "2"}
-                    else if (i+1 < var.Length && var[i + 1] == "")
+                    else if (i + 1 < var.Length && var[i + 1] == "")
                     {
                         //1 == 2
                         var[i] += "==" + var[i + 2];
                         Array.Resize(ref var, var.Length - 2);
                     }
-                    
+
                 }
 
                 var variableName = var[0];
-                
+
                 if (char.IsDigit(variableName[0]))
                 {
-                    throw new Exception($"Syntax Error: {variableName } is invalid variable name.");
+                    Console.Error.WriteLine($" ERR! {variableName} is invalid variable name.");
+                    Environment.Exit(1);
                 }
-                
+
                 var variableValue = var[^1];
-                
+
                 //if the value string contains any of the compare operators
                 if (_compareOperators.Any(variableValue.Contains!))
                 {
                     var decList = context.declaratorlist();
-                    for (int i = 0; i < decList.ChildCount; i++)
+                    for (var i = 0; i < decList.ChildCount; i++)
                     {
                         var declarator = decList.declarator().value();
-                        if (declarator.GetType() == typeof(SimpleParser.ComparisonExpressionContext))
+                        if (declarator.GetType() == typeof(GrammarParser.ComparisonExpressionContext))
                         {
-                            variableValue = VisitComparisonExpression((SimpleParser.ComparisonExpressionContext)declarator)
+                            variableValue = VisitComparisonExpression((GrammarParser.ComparisonExpressionContext)declarator)
                                 ?.ToString();
                         }
-                        if (declarator.GetType() == typeof(SimpleParser.LogicalExpressionContext))
+                        if (declarator.GetType() == typeof(GrammarParser.LogicalExpressionContext))
                         {
-                            variableValue = VisitLogicalExpression((SimpleParser.LogicalExpressionContext)declarator)
+                            variableValue = VisitLogicalExpression((GrammarParser.LogicalExpressionContext)declarator)
                                 ?.ToString();
                         }
                     }
                 }
-                
+
                 VisitMultipleDeclaration(variableName);
-                
+
                 switch (varDatatype)
                 {
                     case "CHAR" when variableValue!.Length > 3:
-                        throw new Exception($"Error: {variableValue} is not a valid character value.");
+                        Console.Error.WriteLine($" ERR! Expected a valid {varDatatype} value for {variableName}.");
+                        Environment.Exit(1);
+                        break;
                     case "CHAR":
                         CharVar[variableName] = variableValue[1..^1];
                         break;
                     case "INT":
-                    {
-                        var isInteger = int.TryParse(variableValue, out var intValue);
-                        if (isInteger)
-                            IntVar[variableName] = intValue;
-                        else   
-                            throw new Exception($"Error: {variableValue} is not a valid integer value.");
-                        break;
-                    }
+                        {
+                            var isInteger = int.TryParse(variableValue, out var intValue);
+                            if (isInteger)
+                                IntVar[variableName] = intValue;
+                            else
+                            {
+                                Console.Error.WriteLine($" ERR! Expected a valid {varDatatype} value for {variableName}.");
+                                Environment.Exit(1);
+                            }
+                            break;  
+                        }
                     case "FLOAT":
-                    {
-                        var isFloat = float.TryParse(variableValue, out var floatValue);
-                        if (isFloat)
-                            FloatVar[variableName] = floatValue;
-                        else
-                            throw new Exception($"Error: {variableValue} is not a valid floating value.");
-                        break;
-                    }
-                    case "BOOL" when variableValue is "\"TRUE\"" or "\"FALSE\"":
-                        BoolVar[variableName] = variableValue[1..^1];
-                        break;
+                        {
+                            var isFloat = float.TryParse(variableValue, out var floatValue);
+                            if (isFloat)
+                                FloatVar[variableName] = floatValue;
+                            else
+                            {
+                                Console.Error.WriteLine($" ERR! Expected a valid {varDatatype} value for {variableName}.");
+                                Environment.Exit(1);
+                            }
+                            break;
+                        }
                     case "BOOL":
-                        throw new Exception($"Error: {variableValue} is not a valid boolean value.");
+                        if (variableValue is "\"TRUE\"" or "\"FALSE\"")
+                        {
+                            BoolVar[variableName] = variableValue[1..^1];
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine($" ERR! Expected a valid {varDatatype} value for {variableName}.");
+                            Environment.Exit(1);
+                        }
+                        break;
                     default:
-                        throw new Exception($"Error: {varDatatype} is not recognized as a data type. ");
+                        Console.Error.WriteLine($" ERR! {varDatatype} is not recognized as a data type. ");
+                        Environment.Exit(1);
+                        break;
                 }
 
                 VisitDefaultDeclaration(varDatatype, variable);
             }
             else
-            { 
+            {
                 if (char.IsDigit(variable[0]))
                 {
-                    throw new Exception($"Syntax Error: {variable} is invalid variable name.");
+                    Console.Error.WriteLine($" ERR! {variable} is invalid variable name.");
+                    Environment.Exit(1);
+                    break;
                 }
+                
                 VisitDefaultDeclaration(varDatatype, variable);
-
             }
         }
         return null;
     }
 
-    public override object? VisitVariablenameExpression(SimpleParser.VariablenameExpressionContext context)
+    public override object? VisitVariableNameExpression(GrammarParser.VariableNameExpressionContext context)
     {
         var varName = context.VARIABLENAME().GetText();
+        
         if (context.parent.GetChild(0).ToString() == "SCAN")
-        {
             return varName;
-        }
-
+        
         if (VisitVariableValueChecker(varName) != null)
             return VisitVariableValueChecker(varName);
-        else
-           throw new Exception($"Variable {varName} is not defined");
+        
+        if (VisitVariableValueChecker(varName) == null)
+        {
+            Console.Error.WriteLine($" ERR! Variable {varName} is not defined");
+            Environment.Exit(1);
+        }
+
+        return null;
     }
 
-    public override object? VisitConstant(SimpleParser.ConstantContext context)
+    public override object? VisitConstant(GrammarParser.ConstantContext context)
     {
         if (context.INTEGERVAL() != null)
         {
@@ -381,33 +439,39 @@ public class Visitor : SimpleBaseVisitor<object?>
         {
             return s.GetText()[1..^1];
         }
-        
+
         return null;
     }
-
-    public override object? VisitNewlineopExpression(SimpleParser.NewlineopExpressionContext context)
+    
+    public override object? VisitNewlineOperatorExpression(GrammarParser.NewlineOperatorExpressionContext context)
     {
-        if (context.NEWLINEOP() != null)
-            return "\n";
-        
-        return null;
+        return context.NEWLINEOPERATOR() != null ? "\n" : null;
     }
 
-    public override object? VisitConcatenateExpression(SimpleParser.ConcatenateExpressionContext context)
+    public override object VisitConcatenateExpression(GrammarParser.ConcatenateExpressionContext context)
     {
         var left = Visit(context.value(0))?.ToString();
         var right = Visit(context.value(1))?.ToString();
-        var op = context.concOp().GetText();
+        var op = context.concatOperator().GetText();
 
         var leftValType = Visit(context.value(0));
         var rightValType = Visit(context.value(1));
         var leftType = context.value(0).GetType().ToString();
         var rightType = context.value(1).GetType().ToString();
 
-        if(leftType == "CODE_Interpreter.GrammarParser+ConstantExpressionContext" && (leftValType is int || leftValType is float))
-            throw new Exception($"Invalid operands for concatenation");
-        if(rightType == "CODE_Interpreter.GrammarParser+ConstantExpressionContext" && (rightValType is int || rightValType is float)) 
-            throw new Exception($"Invalid operands for concatenation");
+        if (leftType == "CODE_Interpreter.GrammarParser+ConstantExpressionContext" &&
+            (leftValType is int || leftValType is float))
+        {
+            Console.Error.WriteLine(" ERR! Invalid operands for concatenation");
+            Environment.Exit(1);
+        }
+
+        if (rightType == "CODE_Interpreter.GrammarParser+ConstantExpressionContext" &&
+            (rightValType is int || rightValType is float))
+        {
+            Console.Error.WriteLine("Invalid operands for concatenation");
+            Environment.Exit(1);
+        }
         
         if (op == "&")
         {
@@ -415,50 +479,70 @@ public class Visitor : SimpleBaseVisitor<object?>
             {
                 return left + right;
             }
-            throw new Exception($"Invalid operands for concatenation: {(string.IsNullOrEmpty(left) ? "left" : "right")} operand is null or empty.");
+            Console.Error.WriteLine($" ERR! Invalid operands for concatenation: {(string.IsNullOrEmpty(left) ? "left" : "right")} " +
+                                    "operand is null or empty.");
+            Environment.Exit(1);
         }
 
-        throw new Exception($"Invalid concatenation operator: '{op}'");
+        Console.Error.WriteLine($" ERR! Invalid concatenation operator: '{op}'");
+        Environment.Exit(1);
+
+        return null;
     }
-    
-    public override object? VisitParenthesisExpression(SimpleParser.ParenthesisExpressionContext context)
+
+    public override object? VisitParenthesisExpression(GrammarParser.ParenthesisExpressionContext context)
     {
         return Visit(context.value());
     }
 
-    public override object? VisitAdditiveExpression(SimpleParser.AdditiveExpressionContext context)
+    public override object? VisitAdditiveExpression(GrammarParser.AdditiveExpressionContext context)
     {
         var leftValue = Visit(context.value(0));
         var rightValue = Visit(context.value(1));
-        var operators = context.addMinOp().GetText();
-        return operators switch
+        var operators = context.addMinOperators().GetText();
+        switch(operators)
         {
-            "+" => _arithmeticOperators.VisitAdd(leftValue, rightValue),
-            "-" => _arithmeticOperators.VisitSubtract(leftValue, rightValue),
-            _ => throw new Exception($"Error: {operators} is not recognized as an additive operator.")
-        };
+            case "+": 
+                return _arithmeticOperators.VisitAdd(leftValue, rightValue);
+            case "-":
+                return _arithmeticOperators.VisitSubtract(leftValue, rightValue);
+            default:    
+                 Console.Error.WriteLine($" ERR! {operators} is not recognized as an additive operator.");
+                 Environment.Exit(1);
+                 break;
+        }
+
+        return null;
     }
 
-    public override object? VisitMultiplicativeExpression(SimpleParser.MultiplicativeExpressionContext context)
+    public override object? VisitMultiplicativeExpression(GrammarParser.MultiplicativeExpressionContext context)
     {
         var leftValue = Visit(context.value(0));
         var rightValue = Visit(context.value(1));
-        var operators = context.mulDivOp().GetText();
-        return operators switch
-        {
-            "*" => _arithmeticOperators.VisitMultiply(leftValue, rightValue),
-            "/" => _arithmeticOperators.VisitDivide(leftValue, rightValue),
-            "%" => _arithmeticOperators.VisitModulo(leftValue, rightValue),
-            _ => throw new Exception($"Error: {operators} is not recognized as an multiplicative operator.")
-        };
+        var operators = context.mulDivOperators().GetText();
+        switch (operators)
+        { 
+                case "*": 
+                    return _arithmeticOperators.VisitMultiply(leftValue, rightValue);
+                case "/": 
+                    return _arithmeticOperators.VisitDivide(leftValue, rightValue);
+                case "%": 
+                    return _arithmeticOperators.VisitModulo(leftValue, rightValue);
+                default:
+                    Console.Error.WriteLine($" ERR! {operators} is not recognized as an multiplicative operator.");
+                    Environment.Exit(1);
+                    break;
+        }
+
+        return null;
     }
-    
-    public override object? VisitComparisonExpression(SimpleParser.ComparisonExpressionContext context)
+
+    public override object? VisitComparisonExpression(GrammarParser.ComparisonExpressionContext context)
     {
         var leftVal = Visit(context.value(0))?.ToString();
         var rightVal = Visit(context.value(1))?.ToString();
-        var op = context.compareOp().GetText();
-        
+        var op = context.compareOperators().GetText();
+
         float floatValue;
 
         //">", "<", ">=", "<=", "==", "<>"
@@ -469,32 +553,40 @@ public class Visitor : SimpleBaseVisitor<object?>
                 return float.Parse(leftVal) > float.Parse(rightVal) ? "TRUE" : "FALSE";
             }
 
-            throw new Exception("Incompatible data types");
-        }else if (op == "<")
+            Console.Error.WriteLine(" ERR! Incompatible data types");
+            Environment.Exit(1);
+        }
+        else if (op == "<")
         {
             if (float.TryParse(leftVal, out floatValue) && float.TryParse(rightVal, out floatValue))
             {
                 return float.Parse(leftVal) < float.Parse(rightVal) ? "TRUE" : "FALSE";
             }
 
-            throw new Exception("Incompatible data types");
-        }else if (op == ">=")
+            Console.Error.WriteLine(" ERR! Incompatible data types");
+            Environment.Exit(1);
+        }
+        else if (op == ">=")
         {
             if (float.TryParse(leftVal, out floatValue) && float.TryParse(rightVal, out floatValue))
             {
                 return float.Parse(leftVal) >= float.Parse(rightVal) ? "TRUE" : "FALSE";
             }
 
-            throw new Exception("Incompatible data types");
-        }else if (op == "<=")
+            Console.Error.WriteLine(" ERR! Incompatible data types");
+            Environment.Exit(1);
+        }
+        else if (op == "<=")
         {
             if (float.TryParse(leftVal, out floatValue) && float.TryParse(rightVal, out floatValue))
             {
                 return float.Parse(leftVal) <= float.Parse(rightVal) ? "TRUE" : "FALSE";
             }
 
-            throw new Exception("Incompatible data types");
-        }else if (op == "==")
+            Console.Error.WriteLine(" ERR! Incompatible data types");
+            Environment.Exit(1);
+        }
+        else if (op == "==")
         {
             if (float.TryParse(leftVal, out floatValue) && float.TryParse(rightVal, out floatValue))
             {
@@ -502,11 +594,17 @@ public class Visitor : SimpleBaseVisitor<object?>
             }
             else
             {
-                if (leftVal == null) throw new Exception("Nothing to compare");
-                
-                return leftVal.Equals(rightVal) ? "TRUE" : "FALSE";
+                if (leftVal == null)
+                {
+                    Console.Error.WriteLine(" ERR! Nothing to compare");
+                    Environment.Exit(1);
+                    return null; 
+                }
+
+                return !leftVal.Equals(rightVal) ? "TRUE" : "FALSE";
             }
-        }else if (op == "<>")
+        }
+        else if (op == "<>")
         {
             if (float.TryParse(leftVal, out floatValue) && float.TryParse(rightVal, out floatValue))
             {
@@ -514,8 +612,13 @@ public class Visitor : SimpleBaseVisitor<object?>
             }
             else
             {
-                if (leftVal == null) throw new Exception("Nothing to compare");
-                
+                if (leftVal == null)
+                {
+                    Console.Error.WriteLine(" ERR! Nothing to compare");
+                    Environment.Exit(1);
+                    return null; 
+                }
+
                 return !leftVal.Equals(rightVal) ? "TRUE" : "FALSE";
             }
         }
@@ -539,11 +642,11 @@ public class Visitor : SimpleBaseVisitor<object?>
         return BoolVar.TryGetValue(varName, out var checker1) ? checker1 : null;
     }
 
-    public override object? VisitLogicalExpression(SimpleParser.LogicalExpressionContext context)
+    public override object? VisitLogicalExpression(GrammarParser.LogicalExpressionContext context)
     {
         var leftVal = Visit(context.value(0))?.ToString();
-        var logOp = context.logicalOp().GetText();
-        string? rightVal = "";
+        var logOp = context.logicalOperators().GetText();
+        var rightVal = "";
         if (logOp != "NOT")
         {
             try
@@ -552,7 +655,7 @@ public class Visitor : SimpleBaseVisitor<object?>
             }
             catch (Exception e)
             {
-                Console.Error.WriteLine("System Error: Invalid logical operation statement.");
+                Console.Error.WriteLine(" ERR! Invalid logical operation statement.");
                 Environment.Exit(1);
             }
         }
@@ -570,14 +673,14 @@ public class Visitor : SimpleBaseVisitor<object?>
         }
     }
 
-    public override object? VisitCondstmt(SimpleParser.CondstmtContext context)
+    public override object? VisitConditionalStatement(GrammarParser.ConditionalStatementContext context)
     {
-        bool checker = false;
-        for (int i = 0; i < context.ChildCount; i++)
+        var checker = false;
+        for (var i = 0; i < context.ChildCount; i++)
         {
             if (context.GetChild(i).GetChild(0).GetText() == "IF")
             {
-                var res = VisitIfstmt((SimpleParser.IfstmtContext)context.GetChild(i));
+                var res = VisitIfStatement((GrammarParser.IfStatementContext)context.GetChild(i));
                 if (res != null)
                 {
                     break;
@@ -585,28 +688,28 @@ public class Visitor : SimpleBaseVisitor<object?>
             }
             else if (context.GetChild(i).GetChild(0).GetText() == "ELSE IF")
             {
-                var res = VisitElseifstmt((SimpleParser.ElseifstmtContext)context.GetChild(i));
+                var res = VisitElseifStatement((GrammarParser.ElseifStatementContext)context.GetChild(i));
                 if (res != null)
                 {
                     break;
                 }
             }
-            else if (context.GetChild(i).GetChild(0).GetText() == "ELSE" )
+            else if (context.GetChild(i).GetChild(0).GetText() == "ELSE")
             {
-                return VisitElsestmt((SimpleParser.ElsestmtContext)context.GetChild(i));
+                return VisitElseStatement((GrammarParser.ElseStatementContext)context.GetChild(i));
             }
         }
         return null;
     }
 
 
-    public override object? VisitIfstmt(SimpleParser.IfstmtContext context)
+    public override object? VisitIfStatement(GrammarParser.IfStatementContext context)
     {
         var value = Visit(context.value());
 
         if (value?.ToString() == "TRUE")
         {
-            base.VisitIfstmt(context);
+            base.VisitIfStatement(context);
             return true;
         }
         else if (value?.ToString() == "FALSE")
@@ -615,43 +718,42 @@ public class Visitor : SimpleBaseVisitor<object?>
         }
         else
         {
-            Console.Error.WriteLine("Invalid boolean expression on IF statement");
+            Console.Error.WriteLine(" ERR! Invalid boolean expression on IF statement");
             Environment.Exit(1);
             return null;
         }
     }
 
-    public override object? VisitElseifstmt(SimpleParser.ElseifstmtContext context)
+    public override object? VisitElseifStatement(GrammarParser.ElseifStatementContext context)
     {
         var value = Visit(context.value());
 
         if (value?.ToString() == "TRUE")
         {
-            base.VisitElseifstmt(context);
+            base.VisitElseifStatement(context);
             return true;
         }
-        else if (value?.ToString() == "FALSE")
+        if (value?.ToString() == "FALSE")
         {
             return null;
         }
-        else
-        {
-            Console.Error.WriteLine("Invalid boolean expression on ELSE IF statement");
-            Environment.Exit(1);
-            return null;
-        }
+        
+        Console.Error.WriteLine(" ERR! Invalid boolean expression on ELSE IF statement");
+        Environment.Exit(1);
+        return null;
+    
     }
 
-    public override object? VisitWhileBlock(SimpleParser.WhileBlockContext context)
+    public override object? VisitWhileBlock(GrammarParser.WhileBlockContext context)
     {
         base.VisitWhileBlock(context);
         return true;
     }
 
-    public override object? VisitWhileCondition(SimpleParser.WhileConditionContext context)
+    public override object? VisitWhileCondition(GrammarParser.WhileConditionContext context)
     {
         var state = Visit(context.value());
-        while (state is string b && b == "TRUE")
+        while (state is string and "TRUE")
         {
             Visit(context.whileBlock());
             state = Visit(context.value());
@@ -659,7 +761,7 @@ public class Visitor : SimpleBaseVisitor<object?>
         return null;
     }
 
-    public override object? VisitSwitchCondition(SimpleParser.SwitchConditionContext context)
+    public override object? VisitSwitchCondition(GrammarParser.SwitchConditionContext context)
     {
         var valueContext = Visit(context.value());
         var switchValue = valueContext!.ToString();
@@ -668,7 +770,7 @@ public class Visitor : SimpleBaseVisitor<object?>
         return null;
     }
 
-    public object? VisitSwitchBlock(SimpleParser.SwitchBlockContext context, string switchValue)
+    private object? VisitSwitchBlock(GrammarParser.SwitchBlockContext context, string switchValue)
     {
         var visited = false;
         foreach (var caseContext in context.caseBlock())
@@ -688,20 +790,20 @@ public class Visitor : SimpleBaseVisitor<object?>
         return null;
     }
 
-    public override object? VisitCaseBlock(SimpleParser.CaseBlockContext context)
+    public override object? VisitCaseBlock(GrammarParser.CaseBlockContext context)
     {
         base.VisitCaseBlock(context);
         return true;
     }
 
-    public override object? VisitDefaultBlock(SimpleParser.DefaultBlockContext context)
+    public override object? VisitDefaultBlock(GrammarParser.DefaultBlockContext context)
     {
         base.VisitDefaultBlock(context);
         return true;
     }
 
-    public override object? VisitElsestmt(SimpleParser.ElsestmtContext context)
+    public override object? VisitElseStatement(GrammarParser.ElseStatementContext context)
     {
-        return base.VisitElsestmt(context);
+        return base.VisitElseStatement(context);
     }
 }
